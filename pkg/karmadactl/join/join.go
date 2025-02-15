@@ -17,6 +17,7 @@ limitations under the License.
 package join
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -33,7 +34,9 @@ import (
 	"github.com/karmada-io/karmada/pkg/karmadactl/options"
 	cmdutil "github.com/karmada-io/karmada/pkg/karmadactl/util"
 	"github.com/karmada-io/karmada/pkg/karmadactl/util/apiclient"
+	utilcomp "github.com/karmada-io/karmada/pkg/karmadactl/util/completion"
 	"github.com/karmada-io/karmada/pkg/util"
+	"github.com/karmada-io/karmada/pkg/util/names"
 )
 
 var (
@@ -56,7 +59,7 @@ func NewCmdJoin(f cmdutil.Factory, parentCommand string) *cobra.Command {
 		Example:               fmt.Sprintf(joinExample, parentCommand),
 		SilenceUsage:          true,
 		DisableFlagsInUseLine: true,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			if err := opts.Complete(args); err != nil {
 				return err
 			}
@@ -77,6 +80,7 @@ func NewCmdJoin(f cmdutil.Factory, parentCommand string) *cobra.Command {
 	opts.AddFlags(flags)
 	options.AddKubeConfigFlags(flags)
 
+	utilcomp.RegisterCompletionFuncForKarmadaContextFlag(cmd)
 	return cmd
 }
 
@@ -100,16 +104,21 @@ type CommandJoinOption struct {
 	// ClusterRegion represents the region of the cluster locate in.
 	ClusterRegion string
 
-	// ClusterZone represents the zone of the cluster locate in.
-	// Deprecated: Use ClusterZones instead.
-	ClusterZone string
-
 	// ClusterZones represents the failure zones(also called availability zones) of the
 	// member cluster. The zones are presented as a slice to support the case
 	// that cluster runs across multiple failure zones.
 	// Refer https://kubernetes.io/docs/setup/best-practices/multiple-zones/ for
 	// more details about running Kubernetes in multiple zones.
 	ClusterZones []string
+
+	// KarmadaAs represents the username to impersonate for the operation in karmada control plane. User could be a regular user or a service account in a namespace
+	KarmadaAs string
+
+	// KarmadaAsGroups represents groups to impersonate for the operation in karmada control plane, this flag can be repeated to specify multiple groups
+	KarmadaAsGroups []string
+
+	// KarmadaAsUID represents the UID to impersonate for the operation in karmada control plane.
+	KarmadaAsUID string
 
 	// DryRun tells if run the command in dry-run mode, without making any server requests.
 	DryRun bool
@@ -128,22 +137,19 @@ func (j *CommandJoinOption) Complete(args []string) error {
 // Validate checks option and return a slice of found errs.
 func (j *CommandJoinOption) Validate(args []string) error {
 	if len(args) > 1 {
-		return fmt.Errorf("only the cluster name is allowed as an argument")
+		return errors.New("only the cluster name is allowed as an argument")
 	}
 	if len(j.ClusterName) == 0 {
-		return fmt.Errorf("cluster name is required")
+		return errors.New("cluster name is required")
 	}
 	if errMsgs := validation.ValidateClusterName(j.ClusterName); len(errMsgs) != 0 {
 		return fmt.Errorf("invalid cluster name(%s): %s", j.ClusterName, strings.Join(errMsgs, ";"))
 	}
 
-	if j.ClusterNamespace == util.NamespaceKarmadaSystem {
+	if j.ClusterNamespace == names.NamespaceKarmadaSystem {
 		klog.Warningf("karmada-system is always reserved for Karmada control plane. We do not recommend using karmada-system to store secrets of member clusters. It may cause mistaken cleanup of resources.")
 	}
 
-	if j.ClusterZone != "" && len(j.ClusterZones) > 0 {
-		return fmt.Errorf("--cluster-zone and --cluster-zones can not co-exist")
-	}
 	return nil
 }
 
@@ -156,10 +162,13 @@ func (j *CommandJoinOption) AddFlags(flags *pflag.FlagSet) {
 		"Path of the cluster's kubeconfig.")
 	flags.StringVar(&j.ClusterProvider, "cluster-provider", "", "Provider of the joining cluster. The Karmada scheduler can use this information to spread workloads across providers for higher availability.")
 	flags.StringVar(&j.ClusterRegion, "cluster-region", "", "The region of the joining cluster. The Karmada scheduler can use this information to spread workloads across regions for higher availability.")
-	flags.StringVar(&j.ClusterZone, "cluster-zone", "", "The zone of the joining cluster.")
-	// nolint: errcheck
-	flags.MarkDeprecated("cluster-zone", "This flag is deprecated and will be removed in future releases. Use --cluster-zones instead.")
 	flags.StringSliceVar(&j.ClusterZones, "cluster-zones", nil, "The zones of the joining cluster. The Karmada scheduler can use this information to spread workloads across zones for higher availability.")
+	flags.StringVar(&j.KarmadaAs, "karmada-as", "",
+		"Username to impersonate for the operation in karmada control plane. User could be a regular user or a service account in a namespace.")
+	flags.StringArrayVar(&j.KarmadaAsGroups, "karmada-as-group", []string{},
+		"Group to impersonate for the operation in karmada control plane, this flag can be repeated to specify multiple groups.")
+	flags.StringVar(&j.KarmadaAsUID, "karmada-as-uid", "",
+		"UID to impersonate for the operation in karmada control plane.")
 	flags.BoolVar(&j.DryRun, "dry-run", false, "Run the command in dry-run mode, without making any server requests.")
 }
 
@@ -175,6 +184,11 @@ func (j *CommandJoinOption) Run(f cmdutil.Factory) error {
 			*options.DefaultConfigFlags.Context, *options.DefaultConfigFlags.KubeConfig, err)
 	}
 
+	// Configure impersonation
+	controlPlaneRestConfig.Impersonate.UserName = j.KarmadaAs
+	controlPlaneRestConfig.Impersonate.Groups = j.KarmadaAsGroups
+	controlPlaneRestConfig.Impersonate.UID = j.KarmadaAsUID
+
 	// Get cluster config
 	clusterConfig, err := apiclient.RestConfig(j.ClusterContext, j.ClusterKubeConfig)
 	if err != nil {
@@ -184,11 +198,21 @@ func (j *CommandJoinOption) Run(f cmdutil.Factory) error {
 	return j.RunJoinCluster(controlPlaneRestConfig, clusterConfig)
 }
 
+var controlPlaneKubeClientBuilder = func(controlPlaneRestConfig *rest.Config) kubeclient.Interface {
+	return kubeclient.NewForConfigOrDie(controlPlaneRestConfig)
+}
+var karmadaClientBuilder = func(controlPlaneRestConfig *rest.Config) karmadaclientset.Interface {
+	return karmadaclientset.NewForConfigOrDie(controlPlaneRestConfig)
+}
+var clusterKubeClientBuilder = func(clusterConfig *rest.Config) kubeclient.Interface {
+	return kubeclient.NewForConfigOrDie(clusterConfig)
+}
+
 // RunJoinCluster join the cluster into karmada.
 func (j *CommandJoinOption) RunJoinCluster(controlPlaneRestConfig, clusterConfig *rest.Config) (err error) {
-	controlPlaneKubeClient := kubeclient.NewForConfigOrDie(controlPlaneRestConfig)
-	karmadaClient := karmadaclientset.NewForConfigOrDie(controlPlaneRestConfig)
-	clusterKubeClient := kubeclient.NewForConfigOrDie(clusterConfig)
+	controlPlaneKubeClient := controlPlaneKubeClientBuilder(controlPlaneRestConfig)
+	karmadaClient := karmadaClientBuilder(controlPlaneRestConfig)
+	clusterKubeClient := clusterKubeClientBuilder(clusterConfig)
 
 	klog.V(1).Infof("Joining cluster config. endpoint: %s", clusterConfig.Host)
 
@@ -198,7 +222,6 @@ func (j *CommandJoinOption) RunJoinCluster(controlPlaneRestConfig, clusterConfig
 		ReportSecrets:      []string{util.KubeCredentials, util.KubeImpersonator},
 		ClusterProvider:    j.ClusterProvider,
 		ClusterRegion:      j.ClusterRegion,
-		ClusterZone:        j.ClusterZone,
 		ClusterZones:       j.ClusterZones,
 		DryRun:             j.DryRun,
 		ControlPlaneConfig: controlPlaneRestConfig,
@@ -259,10 +282,6 @@ func generateClusterInControllerPlane(opts util.ClusterRegisterOption) (*cluster
 		clusterObj.Spec.Provider = opts.ClusterProvider
 	}
 
-	if opts.ClusterZone != "" {
-		clusterObj.Spec.Zone = opts.ClusterZone
-	}
-
 	if len(opts.ClusterZones) > 0 {
 		clusterObj.Spec.Zones = opts.ClusterZones
 	}
@@ -281,7 +300,7 @@ func generateClusterInControllerPlane(opts util.ClusterRegisterOption) (*cluster
 		clusterObj.Spec.ProxyURL = url.String()
 	}
 
-	controlPlaneKarmadaClient := karmadaclientset.NewForConfigOrDie(opts.ControlPlaneConfig)
+	controlPlaneKarmadaClient := karmadaClientBuilder(opts.ControlPlaneConfig)
 	cluster, err := util.CreateClusterObject(controlPlaneKarmadaClient, clusterObj)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cluster(%s) object. error: %v", opts.ClusterName, err)

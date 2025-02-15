@@ -35,6 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	policyv1alpha1 "github.com/karmada-io/karmada/pkg/apis/policy/v1alpha1"
 	workv1alpha1 "github.com/karmada-io/karmada/pkg/apis/work/v1alpha1"
 	workv1alpha2 "github.com/karmada-io/karmada/pkg/apis/work/v1alpha2"
 	"github.com/karmada-io/karmada/pkg/util/fedinformer/genericmanager"
@@ -335,6 +336,36 @@ func TestObtainBindingSpecExistingClusters(t *testing.T) {
 			},
 			want: sets.New("member1", "member2", "member3"),
 		},
+		{
+			name: "unique cluster names with GracefulEvictionTasks with PurgeMode Immediately",
+			bindingSpec: workv1alpha2.ResourceBindingSpec{
+				Clusters: []workv1alpha2.TargetCluster{
+					{
+						Name:     "member1",
+						Replicas: 2,
+					},
+					{
+						Name:     "member2",
+						Replicas: 3,
+					},
+				},
+				GracefulEvictionTasks: []workv1alpha2.GracefulEvictionTask{
+					{
+						FromCluster: "member3",
+						PurgeMode:   policyv1alpha1.Immediately,
+					},
+					{
+						FromCluster: "member4",
+						PurgeMode:   policyv1alpha1.Graciously,
+					},
+					{
+						FromCluster: "member5",
+						PurgeMode:   policyv1alpha1.Never,
+					},
+				},
+			},
+			want: sets.New("member1", "member2", "member4", "member5"),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -410,6 +441,7 @@ func TestFindOrphanWorks(t *testing.T) {
 		c                client.Client
 		bindingNamespace string
 		bindingName      string
+		bindingID        string
 		expectClusters   sets.Set[string]
 	}
 	tests := []struct {
@@ -428,17 +460,18 @@ func TestFindOrphanWorks(t *testing.T) {
 							Namespace:       "wrong format",
 							ResourceVersion: "999",
 							Labels: map[string]string{
-								workv1alpha2.ResourceBindingReferenceKey: names.GenerateBindingReferenceKey("default", "binding"),
-							},
-							Annotations: map[string]string{
-								workv1alpha2.ResourceBindingNamespaceAnnotationKey: "default",
-								workv1alpha2.ResourceBindingNameAnnotationKey:      "binding",
+								workv1alpha2.ResourceBindingPermanentIDLabel: "3617252f-b1bb-43b0-98a1-c7de833c472c",
 							},
 						},
 					},
+				).WithIndex(
+					&workv1alpha1.Work{},
+					workv1alpha2.ResourceBindingPermanentIDLabel,
+					IndexerFuncBasedOnLabel(workv1alpha2.ResourceBindingPermanentIDLabel),
 				).Build(),
 				bindingNamespace: "default",
 				bindingName:      "binding",
+				bindingID:        "3617252f-b1bb-43b0-98a1-c7de833c472c",
 				expectClusters:   sets.New("clusterx"),
 			},
 			want:    nil,
@@ -454,11 +487,7 @@ func TestFindOrphanWorks(t *testing.T) {
 							Namespace:       names.ExecutionSpacePrefix + "cluster1",
 							ResourceVersion: "999",
 							Labels: map[string]string{
-								workv1alpha2.ResourceBindingReferenceKey: names.GenerateBindingReferenceKey("default", "binding"),
-							},
-							Annotations: map[string]string{
-								workv1alpha2.ResourceBindingNamespaceAnnotationKey: "default",
-								workv1alpha2.ResourceBindingNameAnnotationKey:      "binding",
+								workv1alpha2.ResourceBindingPermanentIDLabel: "3617252f-b1bb-43b0-98a1-c7de833c472c",
 							},
 						},
 					},
@@ -476,31 +505,22 @@ func TestFindOrphanWorks(t *testing.T) {
 					},
 					&workv1alpha1.Work{
 						ObjectMeta: metav1.ObjectMeta{
-							Name:            "not-selected-because-of-annotation",
-							Namespace:       names.ExecutionSpacePrefix + "cluster1",
-							ResourceVersion: "999",
-							Labels: map[string]string{
-								workv1alpha2.ResourceBindingReferenceKey: names.GenerateBindingReferenceKey("default", "binding"),
-							},
-						},
-					},
-					&workv1alpha1.Work{
-						ObjectMeta: metav1.ObjectMeta{
 							Name:            "not-selected-because-of-cluster",
 							Namespace:       names.ExecutionSpacePrefix + "clusterx",
 							ResourceVersion: "999",
 							Labels: map[string]string{
-								workv1alpha2.ResourceBindingReferenceKey: names.GenerateBindingReferenceKey("default", "binding"),
-							},
-							Annotations: map[string]string{
-								workv1alpha2.ResourceBindingNamespaceAnnotationKey: "default",
-								workv1alpha2.ResourceBindingNameAnnotationKey:      "binding",
+								workv1alpha2.ResourceBindingPermanentIDLabel: "3617252f-b1bb-43b0-98a1-c7de833c472c",
 							},
 						},
 					},
+				).WithIndex(
+					&workv1alpha1.Work{},
+					workv1alpha2.ResourceBindingPermanentIDLabel,
+					IndexerFuncBasedOnLabel(workv1alpha2.ResourceBindingPermanentIDLabel),
 				).Build(),
 				bindingNamespace: "default",
 				bindingName:      "binding",
+				bindingID:        "3617252f-b1bb-43b0-98a1-c7de833c472c",
 				expectClusters:   sets.New("clusterx"),
 			},
 			want: []workv1alpha1.Work{
@@ -510,11 +530,7 @@ func TestFindOrphanWorks(t *testing.T) {
 						Namespace:       names.ExecutionSpacePrefix + "cluster1",
 						ResourceVersion: "999",
 						Labels: map[string]string{
-							workv1alpha2.ResourceBindingReferenceKey: names.GenerateBindingReferenceKey("default", "binding"),
-						},
-						Annotations: map[string]string{
-							workv1alpha2.ResourceBindingNamespaceAnnotationKey: "default",
-							workv1alpha2.ResourceBindingNameAnnotationKey:      "binding",
+							workv1alpha2.ResourceBindingPermanentIDLabel: "3617252f-b1bb-43b0-98a1-c7de833c472c",
 						},
 					},
 				},
@@ -531,10 +547,7 @@ func TestFindOrphanWorks(t *testing.T) {
 							Namespace:       names.ExecutionSpacePrefix + "cluster1",
 							ResourceVersion: "999",
 							Labels: map[string]string{
-								workv1alpha2.ClusterResourceBindingReferenceKey: names.GenerateBindingReferenceKey("", "binding"),
-							},
-							Annotations: map[string]string{
-								workv1alpha2.ClusterResourceBindingAnnotationKey: "binding",
+								workv1alpha2.ClusterResourceBindingPermanentIDLabel: "3617252f-b1bb-43b0-98a1-c7de833c472c",
 							},
 						},
 					},
@@ -544,19 +557,6 @@ func TestFindOrphanWorks(t *testing.T) {
 							Namespace:       names.ExecutionSpacePrefix + "cluster1",
 							ResourceVersion: "999",
 							Labels:          map[string]string{},
-							Annotations: map[string]string{
-								workv1alpha2.ClusterResourceBindingAnnotationKey: "binding",
-							},
-						},
-					},
-					&workv1alpha1.Work{
-						ObjectMeta: metav1.ObjectMeta{
-							Name:            "not-selected-because-of-annotation",
-							Namespace:       names.ExecutionSpacePrefix + "cluster1",
-							ResourceVersion: "999",
-							Labels: map[string]string{
-								workv1alpha2.ClusterResourceBindingReferenceKey: names.GenerateBindingReferenceKey("", "binding"),
-							},
 						},
 					},
 					&workv1alpha1.Work{
@@ -565,16 +565,18 @@ func TestFindOrphanWorks(t *testing.T) {
 							Namespace:       names.ExecutionSpacePrefix + "clusterx",
 							ResourceVersion: "999",
 							Labels: map[string]string{
-								workv1alpha2.ClusterResourceBindingReferenceKey: names.GenerateBindingReferenceKey("", "binding"),
-							},
-							Annotations: map[string]string{
-								workv1alpha2.ClusterResourceBindingAnnotationKey: "binding",
+								workv1alpha2.ClusterResourceBindingPermanentIDLabel: "3617252f-b1bb-43b0-98a1-c7de833c472c",
 							},
 						},
 					},
+				).WithIndex(
+					&workv1alpha1.Work{},
+					workv1alpha2.ClusterResourceBindingPermanentIDLabel,
+					IndexerFuncBasedOnLabel(workv1alpha2.ClusterResourceBindingPermanentIDLabel),
 				).Build(),
 				bindingNamespace: "",
 				bindingName:      "binding",
+				bindingID:        "3617252f-b1bb-43b0-98a1-c7de833c472c",
 				expectClusters:   sets.New("clusterx"),
 			},
 			want: []workv1alpha1.Work{
@@ -584,10 +586,7 @@ func TestFindOrphanWorks(t *testing.T) {
 						Namespace:       names.ExecutionSpacePrefix + "cluster1",
 						ResourceVersion: "999",
 						Labels: map[string]string{
-							workv1alpha2.ClusterResourceBindingReferenceKey: names.GenerateBindingReferenceKey("", "binding"),
-						},
-						Annotations: map[string]string{
-							workv1alpha2.ClusterResourceBindingAnnotationKey: "binding",
+							workv1alpha2.ClusterResourceBindingPermanentIDLabel: "3617252f-b1bb-43b0-98a1-c7de833c472c",
 						},
 					},
 				},
@@ -597,7 +596,7 @@ func TestFindOrphanWorks(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := FindOrphanWorks(tt.args.c, tt.args.bindingNamespace, tt.args.bindingName, tt.args.expectClusters)
+			got, err := FindOrphanWorks(context.Background(), tt.args.c, tt.args.bindingNamespace, tt.args.bindingName, tt.args.bindingID, tt.args.expectClusters)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FindOrphanWorks() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -652,7 +651,7 @@ func TestRemoveOrphanWorks(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := RemoveOrphanWorks(tt.args.c, tt.args.works); (err != nil) != tt.wantErr {
+			if err := RemoveOrphanWorks(context.Background(), tt.args.c, tt.args.works); (err != nil) != tt.wantErr {
 				t.Errorf("RemoveOrphanWorks() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			got := &workv1alpha1.WorkList{}
@@ -850,7 +849,7 @@ func TestFetchWorkload(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			stopCh := make(chan struct{})
 			mgr := tt.args.informerManager(stopCh)
-			got, err := FetchResourceTemplate(tt.args.dynamicClient, mgr, tt.args.restMapper, tt.args.resource)
+			got, err := FetchResourceTemplate(context.TODO(), tt.args.dynamicClient, mgr, tt.args.restMapper, tt.args.resource)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FetchResourceTemplate() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -1003,7 +1002,7 @@ func TestFetchWorkloadByLabelSelector(t *testing.T) {
 			stopCh := make(chan struct{})
 			mgr := tt.args.informerManager(stopCh)
 			selector, _ := metav1.LabelSelectorAsSelector(tt.args.selector)
-			got, err := FetchResourceTemplateByLabelSelector(tt.args.dynamicClient, mgr, tt.args.restMapper, tt.args.resource, selector)
+			got, err := FetchResourceTemplatesByLabelSelector(tt.args.dynamicClient, mgr, tt.args.restMapper, tt.args.resource, selector)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FetchResourceTemplate() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -1020,6 +1019,7 @@ func TestDeleteWorkByRBNamespaceAndName(t *testing.T) {
 		c         client.Client
 		namespace string
 		name      string
+		bindingID string
 	}
 	tests := []struct {
 		name    string
@@ -1030,22 +1030,27 @@ func TestDeleteWorkByRBNamespaceAndName(t *testing.T) {
 		{
 			name: "work is not found",
 			args: args{
-				c:         fake.NewClientBuilder().WithScheme(gclient.NewSchema()).Build(),
+				c: fake.NewClientBuilder().WithScheme(gclient.NewSchema()).WithIndex(
+					&workv1alpha1.Work{},
+					workv1alpha2.ResourceBindingPermanentIDLabel,
+					IndexerFuncBasedOnLabel(workv1alpha2.ResourceBindingPermanentIDLabel),
+				).Build(),
 				namespace: "default",
 				name:      "foo",
+				bindingID: "3617252f-b1bb-43b0-98a1-c7de833c472c",
 			},
 			want:    nil,
 			wantErr: false,
 		},
 		{
-			name: "delete",
+			name: "delete rb's work",
 			args: args{
 				c: fake.NewClientBuilder().WithScheme(gclient.NewSchema()).WithObjects(
 					&workv1alpha1.Work{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "w1", Namespace: names.ExecutionSpacePrefix + "cluster",
 							Labels: map[string]string{
-								workv1alpha2.ResourceBindingReferenceKey: names.GenerateBindingReferenceKey("default", "foo"),
+								workv1alpha2.ResourceBindingPermanentIDLabel: "3617252f-b1bb-43b0-98a1-c7de833c472c",
 							},
 							Annotations: map[string]string{
 								workv1alpha2.ResourceBindingNameAnnotationKey:      "foo",
@@ -1053,59 +1058,40 @@ func TestDeleteWorkByRBNamespaceAndName(t *testing.T) {
 							},
 						},
 					},
+				).WithIndex(
+					&workv1alpha1.Work{},
+					workv1alpha2.ResourceBindingPermanentIDLabel,
+					IndexerFuncBasedOnLabel(workv1alpha2.ResourceBindingPermanentIDLabel),
 				).Build(),
 				namespace: "default",
 				name:      "foo",
+				bindingID: "3617252f-b1bb-43b0-98a1-c7de833c472c",
 			},
 			want:    []workv1alpha1.Work{},
 			wantErr: false,
 		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := DeleteWorkByRBNamespaceAndName(tt.args.c, tt.args.namespace, tt.args.name); (err != nil) != tt.wantErr {
-				t.Errorf("DeleteWorkByRBNamespaceAndName() error = %v, wantErr %v", err, tt.wantErr)
-			}
-			list := &workv1alpha1.WorkList{}
-			if err := tt.args.c.List(context.TODO(), list); err != nil {
-				t.Error(err)
-				return
-			}
-			if got := list.Items; !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("DeleteWorkByRBNamespaceAndName() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestDeleteWorkByCRBName(t *testing.T) {
-	type args struct {
-		c    client.Client
-		name string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    []workv1alpha1.Work
-		wantErr bool
-	}{
 		{
-			name: "delete",
+			name: "delete crb's work",
 			args: args{
 				c: fake.NewClientBuilder().WithScheme(gclient.NewSchema()).WithObjects(
 					&workv1alpha1.Work{
 						ObjectMeta: metav1.ObjectMeta{
 							Name: "w1", Namespace: names.ExecutionSpacePrefix + "cluster",
 							Labels: map[string]string{
-								workv1alpha2.ClusterResourceBindingReferenceKey: names.GenerateBindingReferenceKey("", "foo"),
+								workv1alpha2.ClusterResourceBindingPermanentIDLabel: "3617252f-b1bb-43b0-98a1-c7de833c472c",
 							},
 							Annotations: map[string]string{
 								workv1alpha2.ClusterResourceBindingAnnotationKey: "foo",
 							},
 						},
 					},
+				).WithIndex(
+					&workv1alpha1.Work{},
+					workv1alpha2.ClusterResourceBindingPermanentIDLabel,
+					IndexerFuncBasedOnLabel(workv1alpha2.ClusterResourceBindingPermanentIDLabel),
 				).Build(),
-				name: "foo",
+				name:      "foo",
+				bindingID: "3617252f-b1bb-43b0-98a1-c7de833c472c",
 			},
 			want:    []workv1alpha1.Work{},
 			wantErr: false,
@@ -1113,16 +1099,16 @@ func TestDeleteWorkByCRBName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := DeleteWorkByCRBName(tt.args.c, tt.args.name); (err != nil) != tt.wantErr {
-				t.Errorf("DeleteWorkByRBNamespaceAndName() error = %v, wantErr %v", err, tt.wantErr)
+			if err := DeleteWorks(context.Background(), tt.args.c, tt.args.namespace, tt.args.name, tt.args.bindingID); (err != nil) != tt.wantErr {
+				t.Errorf("DeleteWorks() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			list := &workv1alpha1.WorkList{}
-			if err := tt.args.c.List(context.TODO(), list); err != nil {
+			if err := tt.args.c.List(context.Background(), list); err != nil {
 				t.Error(err)
 				return
 			}
 			if got := list.Items; !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("DeleteWorkByRBNamespaceAndName() got = %v, want %v", got, tt.want)
+				t.Errorf("DeleteWorks() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

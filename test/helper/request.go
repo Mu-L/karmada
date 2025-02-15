@@ -42,8 +42,8 @@ const (
 func GetTokenFromServiceAccount(client kubernetes.Interface, saNamespace, saName string) (string, error) {
 	klog.Infof("Get serviceAccount(%s/%s)'s refer secret", saNamespace, saName)
 	var token string
-	err := wait.PollImmediate(pollInterval, pollTimeout, func() (done bool, err error) {
-		saRefSecret, err := client.CoreV1().Secrets(saNamespace).Get(context.TODO(), saName, metav1.GetOptions{})
+	err := wait.PollUntilContextTimeout(context.TODO(), pollInterval, pollTimeout, true, func(ctx context.Context) (done bool, err error) {
+		saRefSecret, err := client.CoreV1().Secrets(saNamespace).Get(ctx, saName, metav1.GetOptions{})
 		if err != nil {
 			if apierrors.IsNotFound(err) {
 				return false, nil
@@ -80,9 +80,8 @@ func DoRequest(urlPath string, token string) (int, error) {
 	}
 	res.Header.Add("Authorization", bearToken)
 
-	// #nosec
 	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, // nolint:gosec // G402: TLS InsecureSkipVerify set true.
 	}
 	httpClient := &http.Client{Transport: transport}
 	resp, err := httpClient.Do(res)

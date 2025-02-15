@@ -37,9 +37,9 @@ KARMADA_METRICS_ADAPTER_LABEL="karmada-metrics-adapter"
 
 KARMADA_GO_PACKAGE="github.com/karmada-io/karmada"
 
-MIN_Go_VERSION=go1.20.0
+MIN_GO_VERSION="go$(go list -m -f {{.GoVersion}})"
 
-DEFAULT_CLUSTER_VERSION="kindest/node:v1.27.3"
+DEFAULT_CLUSTER_VERSION="kindest/node:v1.31.2"
 
 KARMADA_TARGET_SOURCE=(
   karmada-aggregated-apiserver=cmd/aggregated-apiserver
@@ -122,10 +122,10 @@ function util::verify_docker {
 function util::verify_go_version {
     local go_version
     IFS=" " read -ra go_version <<< "$(GOFLAGS='' go version)"
-    if [[ "${MIN_Go_VERSION}" != $(echo -e "${MIN_Go_VERSION}\n${go_version[2]}" | sort -s -t. -k 1,1 -k 2,2n -k 3,3n | head -n1) && "${go_version[2]}" != "devel" ]]; then
+    if [[ "${MIN_GO_VERSION}" != $(echo -e "${MIN_GO_VERSION}\n${go_version[2]}" | sort -s -t. -k 1,1 -k 2,2n -k 3,3n | head -n1) && "${go_version[2]}" != "devel" ]]; then
       echo "Detected go version: ${go_version[*]}."
-      echo "Karmada requires ${MIN_Go_VERSION} or greater."
-      echo "Please install ${MIN_Go_VERSION} or later."
+      echo "Karmada requires ${MIN_GO_VERSION} or greater."
+      echo "Please install ${MIN_GO_VERSION} or later."
       exit 1
     fi
 }
@@ -213,7 +213,7 @@ function util::create_signing_certkey {
     # Create ca
     ${sudo} /usr/bin/env bash -e <<EOF
     rm -f "${dest_dir}/${id}.crt" "${dest_dir}/${id}.key"
-    ${OPENSSL_BIN} req -x509 -sha256 -new -nodes -days 3650 -newkey rsa:2048 -keyout "${dest_dir}/${id}.key" -out "${dest_dir}/${id}.crt" -subj "/CN=${cn}/"
+    ${OPENSSL_BIN} req -x509 -sha256 -new -nodes -days 3650 -newkey rsa:3072 -keyout "${dest_dir}/${id}.key" -out "${dest_dir}/${id}.crt" -subj "/CN=${cn}/"
     echo '{"signing":{"default":{"expiry":"43800h","usages":["signing","key encipherment",${purpose}]}}}' > "${dest_dir}/${id}-config.json"
 EOF
 }
@@ -236,23 +236,35 @@ function util::create_certkey {
     done
     ${sudo} /usr/bin/env bash -e <<EOF
     cd ${dest_dir}
-    echo '{"CN":"${cn}","hosts":[${hosts}],"names":[{"O":"${og}"}],"key":{"algo":"rsa","size":2048}}' | ${CFSSL_BIN} gencert -ca=${ca}.crt -ca-key=${ca}.key -config=${ca}-config.json - | ${CFSSLJSON_BIN} -bare ${id}
+    echo '{"CN":"${cn}","hosts":[${hosts}],"names":[{"O":"${og}"}],"key":{"algo":"rsa","size":3072}}' | ${CFSSL_BIN} gencert -ca=${ca}.crt -ca-key=${ca}.key -config=${ca}-config.json - | ${CFSSLJSON_BIN} -bare ${id}
     mv "${id}-key.pem" "${id}.key"
     mv "${id}.pem" "${id}.crt"
     rm -f "${id}.csr"
 EOF
 }
 
+# util::create_key_pair generates a new public and private key pair.
+function util::create_key_pair {
+  local sudo=$1
+  local dest_dir=$2
+  local name=$3
+  ${sudo} /usr/bin/env bash -e <<EOF
+  cd ${dest_dir}
+  openssl genrsa -out ${name}.key 3072
+  openssl rsa -in ${name}.key -pubout -out ${name}.pub
+EOF
+}
+
 # util::append_client_kubeconfig creates a new context including a cluster and a user to the existed kubeconfig file
 function util::append_client_kubeconfig {
     local kubeconfig_path=$1
-    local client_certificate_file=$2
-    local client_key_file=$3
-    local api_host=$4
-    local api_port=$5
+    local ca_file=$2
+    local client_certificate_file=$3
+    local client_key_file=$4
+    local server=$5
     local client_id=$6
     local token=${7:-}
-    kubectl config set-cluster "${client_id}" --server=https://"${api_host}:${api_port}" --insecure-skip-tls-verify=true --kubeconfig="${kubeconfig_path}"
+    kubectl config set-cluster "${client_id}" --server="${server}" --embed-certs --certificate-authority="${ca_file}" --kubeconfig="${kubeconfig_path}"
     kubectl config set-credentials "${client_id}" --token="${token}" --client-certificate="${client_certificate_file}" --client-key="${client_key_file}" --embed-certs=true --kubeconfig="${kubeconfig_path}"
     kubectl config set-context "${client_id}" --cluster="${client_id}" --user="${client_id}" --kubeconfig="${kubeconfig_path}"
 }
@@ -757,7 +769,7 @@ function util::set_mirror_registry_for_china_mainland() {
   )
   for dockerfile in "${dockerfile_list[@]}"; do
     grep 'mirrors.ustc.edu.cn' ${repo_root}/${dockerfile} > /dev/null || sed -i'' -e "/FROM alpine:/a\\
-RUN echo -e http://mirrors.ustc.edu.cn/alpine/v3.17/main/ > /etc/apk/repositories" ${repo_root}/${dockerfile}
+RUN echo -e http://mirrors.ustc.edu.cn/alpine/v3.21/main/ > /etc/apk/repositories" ${repo_root}/${dockerfile}
   done
 }
 

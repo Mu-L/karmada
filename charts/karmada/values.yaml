@@ -55,6 +55,7 @@ cfssl:
   ## @param image.registry karmada cfssl image registry
   ## @param image.repository karmada cfssl image repository
   ## @param image.tag karmada cfssl image tag (immutable tags are recommended)
+  ## @param image.pullSecrets Specify docker-registry secret names as an array
   ##
   image:
     registry: docker.io
@@ -62,11 +63,19 @@ cfssl:
     tag: latest
     ## Specify a imagePullPolicy, defaults to 'IfNotPresent'
     pullPolicy: IfNotPresent
+    ## Optionally specify an array of imagePullSecrets.
+    ## Secrets must be manually created in the namespace.
+    ## Example:
+    ## pullSecrets:
+    ##   - myRegistryKeySecretName
+    ##
+    pullSecrets: []
 
 kubectl:
   ## @param image.registry karmada kubectl image registry
   ## @param image.repository karmada kubectl image repository
   ## @param image.tag karmada kubectl image tag (immutable tags are recommended)
+  ## @param image.pullSecrets Specify docker-registry secret names as an array
   ##
   image:
     registry: docker.io
@@ -74,6 +83,13 @@ kubectl:
     tag: latest
     ## Specify a imagePullPolicy, defaults to 'IfNotPresent'
     pullPolicy: IfNotPresent
+    ## Optionally specify an array of imagePullSecrets.
+    ## Secrets must be manually created in the namespace.
+    ## Example:
+    ## pullSecrets:
+    ##   - myRegistryKeySecretName
+    ##
+    pullSecrets: []
 
 ## pre-install job config
 preInstallJob:
@@ -81,6 +97,14 @@ preInstallJob:
   nodeSelector: {}
   ## Define policies that determine when to delete corresponding hook resources: before-hook-creation,hook-succeeded,hook-failed
   hookDeletePolicy: "hook-succeeded"
+
+## static-resource job config
+staticResourceJob:
+  tolerations: []
+  nodeSelector: {}
+  ## Set a TTL for the static-resource Job, the Job will be automatically cleaned up after this time.
+  ## This only works on Kubernetes version 1.23 or higher.
+  ttlSecondsAfterFinished: 10
 
 ## post-install job config
 postInstallJob:
@@ -114,6 +138,8 @@ certs:
       "localhost",
       "127.0.0.1"
     ]
+    ## @param certs.auto.rsaSize rsa key size of the certificate
+    rsaSize: 3072
   custom:
     ## @param certs.custom.caCrt ca of the certificate
     caCrt: |
@@ -206,6 +232,8 @@ scheduler:
       maxSurge: 50%
   ## @param apiServer.podDisruptionBudget
   podDisruptionBudget: *podDisruptionBudget
+  ## @param scheduler.priorityClassName the priority class name for the karmada-scheduler
+  priorityClassName: "system-node-critical"
 
 ## webhook config
 webhook:
@@ -262,6 +290,8 @@ webhook:
       maxSurge: 50%
   ## @param apiServer.podDisruptionBudget
   podDisruptionBudget: *podDisruptionBudget
+  ## @param webhook.priorityClassName the priority class name for the karmada-webhook
+  priorityClassName: "system-node-critical"
 
 ## controller manager config
 controllerManager:
@@ -326,6 +356,8 @@ controllerManager:
   extraCommandArgs: {}
   ## @param apiServer.podDisruptionBudget
   podDisruptionBudget: *podDisruptionBudget
+  ## @param controllerManager.priorityClassName the priority class name for the karmada-controller-manager
+  priorityClassName: "system-node-critical"
 
 ## karmada apiserver config
 apiServer:
@@ -348,7 +380,7 @@ apiServer:
   image:
     registry: registry.k8s.io
     repository: kube-apiserver
-    tag: "v1.26.12"
+    tag: "v1.31.3"
     ## Specify a imagePullPolicy, defaults to 'IfNotPresent'
     pullPolicy: IfNotPresent
     ## Optionally specify an array of imagePullSecrets.
@@ -398,6 +430,7 @@ apiServer:
   ## will take effect when 'apiServer.serviceType' is 'NodePort'.
   ## If no port is specified, the nodePort will be automatically assigned.
   nodePort: 0
+  serviceClusterIPRange: "10.96.0.0/12"
   maxRequestsInflight: 1500
   maxMutatingRequestsInflight: 500
   ## @param apiserver.strategy strategy of the apiserver
@@ -408,6 +441,8 @@ apiServer:
       maxSurge: 1
   ## @param apiServer.podDisruptionBudget
   podDisruptionBudget: *podDisruptionBudget
+  ## @param apiServer.priorityClassName the priority class name for the karmada-apiserver
+  priorityClassName: "system-node-critical"
 
 ## karmada aggregated apiserver config
 aggregatedApiServer:
@@ -466,6 +501,8 @@ aggregatedApiServer:
       maxSurge: 50%
   ## @param apiServer.podDisruptionBudget
   podDisruptionBudget: *podDisruptionBudget
+  ## @param aggregatedApiServer.priorityClassName the priority class name for the karmada-aggregated-apiserver.
+  priorityClassName: "system-node-critical"
 
 ## karmada metrics adapter config
 metricsAdapter:
@@ -488,10 +525,7 @@ metricsAdapter:
     registry: docker.io
     repository: karmada/karmada-metrics-adapter
     tag: *karmadaImageVersion
-    ## Specify a imagePullPolicy
-    ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
-    ##
-    pullPolicy: Always
+    pullPolicy: *karmadaImagePullPolicy
     ## Optionally specify an array of imagePullSecrets.
     ## Secrets must be manually created in the namespace.
     ## Example:
@@ -527,6 +561,8 @@ metricsAdapter:
       maxSurge: 50%
   ## @param apiServer.podDisruptionBudget
   podDisruptionBudget: *podDisruptionBudget
+  ## @param metricsAadpter.priorityClassName the priority class name for the karmada-mertics-adapter
+  priorityClassName: "system-node-critical"
 
 ## kubernetes controller manager config
 kubeControllerManager:
@@ -548,7 +584,7 @@ kubeControllerManager:
   image:
     registry: registry.k8s.io
     repository: kube-controller-manager
-    tag: "v1.26.12"
+    tag: "v1.31.3"
     ## Specify a imagePullPolicy, defaults to 'IfNotPresent'
     pullPolicy: IfNotPresent
     ## Optionally specify an array of imagePullSecrets.
@@ -583,9 +619,13 @@ kubeControllerManager:
     rollingUpdate:
       maxUnavailable: 0
       maxSurge: 50%
-  controllers: namespace,garbagecollector,serviceaccount-token,ttl-after-finished,bootstrapsigner,tokencleaner,csrapproving,csrcleaner,csrsigning,clusterrole-aggregation
+  controllers: namespace,garbagecollector,serviceaccount-token,ttl-after-finished,bootstrapsigner,tokencleaner,csrcleaner,csrsigning,clusterrole-aggregation
   ## @param apiServer.podDisruptionBudget
   podDisruptionBudget: *podDisruptionBudget
+  serviceClusterIPRange: "10.96.0.0/12"
+  clusterCIDR: "10.244.0.0/16"
+  ## @param kubeControllerManager.priorityClassName the priority class name for the kube-controller-manager
+  priorityClassName: "system-node-critical"
 
 ## etcd config
 etcd:
@@ -642,7 +682,7 @@ etcd:
     image:
       registry: registry.k8s.io
       repository: etcd
-      tag: "3.5.9-0"
+      tag: "3.5.16-0"
       ## Specify a imagePullPolicy, defaults to 'IfNotPresent'
       pullPolicy: IfNotPresent
     ## @param etcd.internal.storageType storage type for etcd data
@@ -670,6 +710,8 @@ etcd:
       # requests:
       #   cpu: 100m
       #   memory: 128Mi
+    ## @param etcd.internal.priorityClassName the priority class name for the etcd
+    priorityClassName: "system-node-critical"
 
 ## agent client config
 agent:
@@ -749,6 +791,8 @@ agent:
       maxSurge: 50%
   ## @param apiServer.podDisruptionBudget
   podDisruptionBudget: *podDisruptionBudget
+  ## @param agent.priorityClassName the priority class name for the karmada-agent
+  priorityClassName: "system-node-critical"
 
 ## karmada scheduler estimator
 schedulerEstimator:
@@ -828,6 +872,11 @@ schedulerEstimator:
       maxSurge: 50%
   ## @param apiServer.podDisruptionBudget
   podDisruptionBudget: *podDisruptionBudget
+  ## @param featureGate to schedulerEstimator
+  # FooPluginName: true
+  featureGates: {}
+  ## @param schedulerEstimator.priorityClassName the priority class name for the scheduler-estimator
+  priorityClassName: "system-node-critical"
 
 ## descheduler config
 descheduler:
@@ -886,6 +935,8 @@ descheduler:
   kubeconfig: karmada-kubeconfig
   ## @param apiServer.podDisruptionBudget
   podDisruptionBudget: *podDisruptionBudget
+  ## @param descheduler.priorityClassName the priority class name for the descheduler
+  priorityClassName: "system-node-critical"
 
 ## karmada-search config
 search:
@@ -946,3 +997,5 @@ search:
   kubeconfig: karmada-kubeconfig
   ## @param apiServer.podDisruptionBudget
   podDisruptionBudget: *podDisruptionBudget
+  ## @param search.priorityClassName the priority class name for the karmada-search
+  priorityClassName: "system-node-critical"

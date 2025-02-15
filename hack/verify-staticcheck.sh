@@ -19,7 +19,7 @@ set -o nounset
 set -o pipefail
 
 REPO_ROOT=$(dirname "${BASH_SOURCE[0]}")/..
-GOLANGCI_LINT_VER="v1.52.2"
+GOLANGCI_LINT_VER="v1.59.0"
 
 cd "${REPO_ROOT}"
 source "hack/util.sh"
@@ -38,6 +38,7 @@ if golangci-lint run; then
 else
   echo # print one empty line, separate from warning messages.
   echo 'Please review the above warnings.'
+  echo 'Tips: The golangci-lint might help you fix some issues, try with the command "golangci-lint run --fix".'
   echo 'If the above warnings do not make sense, feel free to file an issue.'
   exit 1
 fi

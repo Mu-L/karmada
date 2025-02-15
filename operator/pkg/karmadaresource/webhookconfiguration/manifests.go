@@ -24,7 +24,7 @@ kind: MutatingWebhookConfiguration
 metadata:
   name: mutating-config
   labels:
-    app: mutating-config
+    app: karmada-webhook
 webhooks:
   - name: propagationpolicy.karmada.io
     rules:
@@ -63,6 +63,34 @@ webhooks:
         scope: "Namespaced"
     clientConfig:
       url: https://{{ .Service }}.{{ .Namespace }}.svc:443/mutate-overridepolicy
+      caBundle: {{ .CaBundle }}
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions: ["v1"]
+    timeoutSeconds: 3
+  - name: resourcebinding.karmada.io
+    rules:
+      - operations: ["CREATE"]
+        apiGroups: ["work.karmada.io"]
+        apiVersions: ["*"]
+        resources: ["resourcebindings"]
+        scope: "Namespaced"
+    clientConfig:
+      url: https://{{ .Service }}.{{ .Namespace }}.svc:443/mutate-resourcebinding
+      caBundle: {{ .CaBundle }}
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions: ["v1"]
+    timeoutSeconds: 3
+  - name: clusterresourcebinding.karmada.io
+    rules:
+      - operations: ["CREATE"]
+        apiGroups: ["work.karmada.io"]
+        apiVersions: ["*"]
+        resources: ["clusterresourcebindings"]
+        scope: "Cluster"
+    clientConfig:
+      url: https://{{ .Service }}.{{ .Namespace }}.svc:443/mutate-clusterresourcebinding
       caBundle: {{ .CaBundle }}
     failurePolicy: Fail
     sideEffects: None
@@ -119,7 +147,7 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: validating-config
   labels:
-    app: validating-config
+    app: karmada-webhook
 webhooks:
   - name: propagationpolicy.karmada.io
     rules:

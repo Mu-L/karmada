@@ -39,7 +39,7 @@ func Test_watchMux_StopBySelf(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		w := newFakeWatcher(wait.NeverStop)
-		m.AddSource(w, func(event watch.Event) {})
+		m.AddSource(w, func(watch.Event) {})
 		go func() {
 			ticker := time.NewTimer(time.Second)
 			for {
@@ -84,7 +84,7 @@ func Test_watchMux_StopBySource(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		w := newFakeWatcher(ctx.Done())
-		m.AddSource(w, func(event watch.Event) {})
+		m.AddSource(w, func(watch.Event) {})
 		go func() {
 			ticker := time.NewTimer(time.Second)
 			for {
@@ -1078,6 +1078,96 @@ func TestMultiNamespace_Equal(t *testing.T) {
 			}
 			if got := n.Equal(tt.args.another); got != tt.want {
 				t.Errorf("Equal() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestMultiNamespace_Merge(t *testing.T) {
+	type fields struct {
+		allNamespaces bool
+		namespaces    sets.Set[string]
+	}
+	type args struct {
+		multiNS *MultiNamespace
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+		want   *MultiNamespace
+	}{
+		{
+			name: "all ns merge all ns",
+			fields: fields{
+				allNamespaces: true,
+			},
+			args: args{
+				multiNS: &MultiNamespace{
+					allNamespaces: true,
+				},
+			},
+			want: &MultiNamespace{
+				allNamespaces: true,
+			},
+		},
+		{
+			name: "all ns merge not all",
+			fields: fields{
+				allNamespaces: true,
+			},
+			args: args{
+				multiNS: &MultiNamespace{
+					allNamespaces: false,
+					namespaces:    sets.New[string]("foo"),
+				},
+			},
+			want: &MultiNamespace{
+				allNamespaces: true,
+			},
+		},
+		{
+			name: "not all ns merge all",
+			fields: fields{
+				allNamespaces: false,
+				namespaces:    sets.New[string]("foo"),
+			},
+			args: args{
+				multiNS: &MultiNamespace{
+					allNamespaces: true,
+				},
+			},
+			want: &MultiNamespace{
+				allNamespaces: true,
+			},
+		},
+		{
+			name: "not all ns merge not all ns",
+			fields: fields{
+				allNamespaces: false,
+				namespaces:    sets.New[string]("foo", "zoo"),
+			},
+			args: args{
+				multiNS: &MultiNamespace{
+					allNamespaces: false,
+					namespaces:    sets.New[string]("bar"),
+				},
+			},
+			want: &MultiNamespace{
+				allNamespaces: false,
+				namespaces:    sets.New[string]("foo", "bar", "zoo"),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			n := &MultiNamespace{
+				allNamespaces: tt.fields.allNamespaces,
+				namespaces:    tt.fields.namespaces,
+			}
+			got := n.Merge(tt.args.multiNS)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("MultiNamespace.Merge() = %v, want %v", got, tt.want)
 			}
 		})
 	}

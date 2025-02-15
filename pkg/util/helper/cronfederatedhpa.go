@@ -1,5 +1,6 @@
 /*
 Copyright 2023 The Karmada Authors.
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -21,6 +22,9 @@ import (
 	autoscalingv1alpha1 "github.com/karmada-io/karmada/pkg/apis/autoscaling/v1alpha1"
 )
 
+// DefaultHistoryLimit defines the default number of history entries to keep
+const DefaultHistoryLimit = 3
+
 // IsCronFederatedHPARuleSuspend returns true if the CronFederatedHPA is suspended.
 func IsCronFederatedHPARuleSuspend(rule autoscalingv1alpha1.CronFederatedHPARule) bool {
 	if rule.Suspend == nil {
@@ -32,7 +36,7 @@ func IsCronFederatedHPARuleSuspend(rule autoscalingv1alpha1.CronFederatedHPARule
 // GetCronFederatedHPASuccessHistoryLimits returns the successful history limits of the CronFederatedHPA.
 func GetCronFederatedHPASuccessHistoryLimits(rule autoscalingv1alpha1.CronFederatedHPARule) int {
 	if rule.SuccessfulHistoryLimit == nil {
-		return 3
+		return DefaultHistoryLimit
 	}
 	return int(*rule.SuccessfulHistoryLimit)
 }
@@ -40,7 +44,7 @@ func GetCronFederatedHPASuccessHistoryLimits(rule autoscalingv1alpha1.CronFedera
 // GetCronFederatedHPAFailedHistoryLimits returns the failed history limits of the CronFederatedHPA.
 func GetCronFederatedHPAFailedHistoryLimits(rule autoscalingv1alpha1.CronFederatedHPARule) int {
 	if rule.FailedHistoryLimit == nil {
-		return 3
+		return DefaultHistoryLimit
 	}
 	return int(*rule.FailedHistoryLimit)
 }

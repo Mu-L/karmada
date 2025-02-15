@@ -35,7 +35,7 @@ const (
 // +genclient
 // +genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +kubebuilder:resource:scope="Cluster"
+// +kubebuilder:resource:path=resourceinterpreterwebhookconfigurations,scope="Cluster",categories={karmada-io}
 // +kubebuilder:storageversion
 
 // ResourceInterpreterWebhookConfiguration describes the configuration of webhooks which take the responsibility to
@@ -56,6 +56,24 @@ type ResourceInterpreterWebhook struct {
 	Name string `json:"name"`
 
 	// ClientConfig defines how to communicate with the hook.
+	// It supports two mutually exclusive configuration modes:
+	//
+	// 1. URL - Directly specify the webhook URL with format `scheme://host:port/path`.
+	//    Example: https://webhook.example.com:8443/my-interpreter
+	//
+	// 2. Service - Reference a Kubernetes Service that exposes the webhook.
+	//    When using Service reference, Karmada resolves the endpoint through following steps:
+	//    a) First attempts to locate the Service in karmada-apiserver
+	//    b) If found, constructs URL based on Service type:
+	//       - ClusterIP/LoadBalancer/NodePort: Uses ClusterIP with port from Service spec
+	//         (Note: Services with ClusterIP "None" are rejected), Example:
+	//         `https://<cluster ip>:<port>`
+	//       - ExternalName: Uses external DNS name format: `https://<external name>:<port>`
+	//    c) If NOT found in karmada-apiserver, falls back to standard Kubernetes
+	//       service DNS name format: `https://<service>.<namespace>.svc:<port>`
+	//
+	// Note: When both URL and Service are specified, the Service reference takes precedence
+	//       and the URL configuration will be ignored.
 	// +required
 	ClientConfig admissionregistrationv1.WebhookClientConfig `json:"clientConfig"`
 
@@ -99,7 +117,7 @@ type RuleWithOperations struct {
 type InterpreterOperation string
 
 const (
-	// InterpreterOperationAll indicates math all InterpreterOperation.
+	// InterpreterOperationAll indicates matching all InterpreterOperation.
 	InterpreterOperationAll InterpreterOperation = "*"
 
 	// InterpreterOperationInterpretReplica indicates that karmada want to figure out the replica declaration of a specific object.

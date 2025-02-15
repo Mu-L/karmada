@@ -26,6 +26,7 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/klog/v2"
 
+	operatorv1alpha1 "github.com/karmada-io/karmada/operator/pkg/apis/operator/v1alpha1"
 	"github.com/karmada-io/karmada/operator/pkg/certs"
 	"github.com/karmada-io/karmada/operator/pkg/constants"
 	"github.com/karmada-io/karmada/operator/pkg/util"
@@ -70,7 +71,6 @@ func runUploadAdminKubeconfig(r workflow.RunData) error {
 	case corev1.ServiceTypeClusterIP:
 		apiserverName := util.KarmadaAPIServerName(data.GetName())
 		endpoint = fmt.Sprintf("https://%s.%s.svc.cluster.local:%d", apiserverName, data.GetNamespace(), constants.KarmadaAPIserverListenClientPort)
-
 	case corev1.ServiceTypeNodePort:
 		service, err := apiclient.GetService(data.RemoteClient(), util.KarmadaAPIServerName(data.GetName()), data.GetNamespace())
 		if err != nil {
@@ -78,6 +78,21 @@ func runUploadAdminKubeconfig(r workflow.RunData) error {
 		}
 		nodePort := getNodePortFromAPIServerService(service)
 		endpoint = fmt.Sprintf("https://%s:%d", data.ControlplaneAddress(), nodePort)
+	case corev1.ServiceTypeLoadBalancer:
+		service, err := apiclient.GetService(data.RemoteClient(), util.KarmadaAPIServerName(data.GetName()), data.GetNamespace())
+		if err != nil {
+			return err
+		}
+		if len(service.Status.LoadBalancer.Ingress) == 0 {
+			return fmt.Errorf("no loadbalancer ingress found in service (%s/%s)", data.GetName(), data.GetNamespace())
+		}
+		loadbalancerAddress := getLoadbalancerAddress(service.Status.LoadBalancer.Ingress)
+		if loadbalancerAddress == "" {
+			return fmt.Errorf("can not find loadbalancer ip or hostname in service (%s/%s)", data.GetName(), data.GetNamespace())
+		}
+		endpoint = fmt.Sprintf("https://%s:%d", loadbalancerAddress, constants.KarmadaAPIserverListenClientPort)
+	default:
+		return errors.New("not supported service type for Karmada API server")
 	}
 
 	kubeconfig, err := buildKubeConfigFromSpec(data, endpoint)
@@ -90,16 +105,13 @@ func runUploadAdminKubeconfig(r workflow.RunData) error {
 		return err
 	}
 
-	err = apiclient.CreateOrUpdateSecret(data.RemoteClient(), &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: data.GetNamespace(),
-			Name:      util.AdminKubeconfigSecretName(data.GetName()),
-			Labels:    constants.KarmadaOperatorLabel,
-		},
-		Data: map[string][]byte{"kubeconfig": configBytes},
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create secret of kubeconfig, err: %w", err)
+	secretList := generateComponentKubeconfigSecrets(data, string(configBytes))
+
+	for _, secret := range secretList {
+		err = apiclient.CreateOrUpdateSecret(data.RemoteClient(), secret)
+		if err != nil {
+			return fmt.Errorf("failed to create/update karmada-config secret '%s', err: %w", secret.Name, err)
+		}
 	}
 
 	// store rest config to RunData.
@@ -125,6 +137,17 @@ func getNodePortFromAPIServerService(service *corev1.Service) int32 {
 	}
 
 	return nodePort
+}
+
+func getLoadbalancerAddress(ingress []corev1.LoadBalancerIngress) string {
+	for _, in := range ingress {
+		if in.Hostname != "" {
+			return in.Hostname
+		} else if in.IP != "" {
+			return in.IP
+		}
+	}
+	return ""
 }
 
 func buildKubeConfigFromSpec(data InitData, serverURL string) (*clientcmdapi.Config, error) {
@@ -153,26 +176,70 @@ func buildKubeConfigFromSpec(data InitData, serverURL string) (*clientcmdapi.Con
 	), nil
 }
 
+func generateKubeconfigSecret(name, namespace, configString string) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      name,
+			Labels:    constants.KarmadaOperatorLabel,
+		},
+		StringData: map[string]string{"karmada.config": configString},
+	}
+}
+
+func generateComponentKubeconfigSecrets(data InitData, configString string) []*corev1.Secret {
+	var secrets []*corev1.Secret
+
+	secrets = append(secrets, generateKubeconfigSecret(util.AdminKarmadaConfigSecretName(data.GetName()), data.GetNamespace(), configString))
+
+	if data.Components() == nil {
+		return secrets
+	}
+
+	componentList := map[string]interface{}{
+		util.KarmadaAggregatedAPIServerName(data.GetName()): data.Components().KarmadaAggregatedAPIServer,
+		util.KarmadaControllerManagerName(data.GetName()):   data.Components().KarmadaControllerManager,
+		util.KubeControllerManagerName(data.GetName()):      data.Components().KubeControllerManager,
+		util.KarmadaSchedulerName(data.GetName()):           data.Components().KarmadaScheduler,
+		util.KarmadaDeschedulerName(data.GetName()):         data.Components().KarmadaDescheduler,
+		util.KarmadaMetricsAdapterName(data.GetName()):      data.Components().KarmadaMetricsAdapter,
+		util.KarmadaSearchName(data.GetName()):              data.Components().KarmadaSearch,
+		util.KarmadaWebhookName(data.GetName()):             data.Components().KarmadaWebhook,
+	}
+
+	for karmadaComponentName, component := range componentList {
+		if component != nil {
+			secrets = append(secrets, generateKubeconfigSecret(util.ComponentKarmadaConfigSecretName(karmadaComponentName), data.GetNamespace(), configString))
+		}
+	}
+
+	return secrets
+}
+
 // NewUploadCertsTask init a Upload-Certs task
-func NewUploadCertsTask() workflow.Task {
+func NewUploadCertsTask(karmada *operatorv1alpha1.Karmada) workflow.Task {
+	tasks := []workflow.Task{
+		{
+			Name: "Upload-KarmadaCert",
+			Run:  runUploadKarmadaCert,
+		},
+		{
+			Name: "Upload-WebHookCert",
+			Run:  runUploadWebHookCert,
+		},
+	}
+	if karmada.Spec.Components.Etcd.Local != nil {
+		uploadEtcdTask := workflow.Task{
+			Name: "Upload-EtcdCert",
+			Run:  runUploadEtcdCert,
+		}
+		tasks = append(tasks, uploadEtcdTask)
+	}
 	return workflow.Task{
 		Name:        "Upload-Certs",
 		Run:         runUploadCerts,
 		RunSubTasks: true,
-		Tasks: []workflow.Task{
-			{
-				Name: "Upload-KarmadaCert",
-				Run:  runUploadKarmadaCert,
-			},
-			{
-				Name: "Upload-EtcdCert",
-				Run:  runUploadEtcdCert,
-			},
-			{
-				Name: "Upload-WebHookCert",
-				Run:  runUploadWebHookCert,
-			},
-		},
+		Tasks:       tasks,
 	}
 }
 

@@ -21,7 +21,10 @@ import (
 	"strings"
 	"testing"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	storagevolume "k8s.io/component-helpers/storage/volume"
+	utildeployment "k8s.io/kubectl/pkg/util/deployment"
 
 	"github.com/karmada-io/karmada/pkg/util"
 )
@@ -181,11 +184,99 @@ func TestRemoveIrrelevantField(t *testing.T) {
 				return false
 			},
 		},
+		{
+			name: "remove service-account token secret irrelevant fields",
+			workload: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"kind": util.SecretKind,
+					"metadata": map[string]interface{}{
+						corev1.ServiceAccountUIDKey: "123",
+					},
+					"type": string(corev1.SecretTypeServiceAccountToken),
+					"data": map[string]interface{}{
+						corev1.ServiceAccountTokenKey: "abc",
+					},
+				},
+			},
+			unexpectedFields: []field{
+				{"metadata", "annotations", corev1.ServiceAccountUIDKey},
+				{"data", corev1.ServiceAccountTokenKey},
+			},
+		},
+		{
+			name: "retains secret basic-auth fields",
+			workload: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"kind": util.SecretKind,
+					"metadata": map[string]interface{}{
+						"foo": "bar",
+					},
+					"type": string(corev1.SecretTypeBasicAuth),
+					"data": map[string]interface{}{
+						corev1.BasicAuthUsernameKey: "foo",
+						corev1.BasicAuthPasswordKey: "bar",
+					},
+				},
+			},
+			shouldNotRemoveFields: []field{
+				{"metadata", "foo"},
+				{"data", corev1.BasicAuthUsernameKey},
+				{"data", corev1.BasicAuthPasswordKey},
+			},
+		},
+		{
+			name: "remove selected-node pvc annotation",
+			workload: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"kind": util.PersistentVolumeClaimKind,
+					"metadata": map[string]interface{}{
+						"annotations": map[string]interface{}{
+							storagevolume.AnnSelectedNode: "node1",
+						},
+					},
+				},
+			},
+			unexpectedFields: []field{
+				{"metadata", "annotations", storagevolume.AnnSelectedNode},
+			},
+		},
+		{
+			name: "removes deployment revision annotation",
+			workload: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"kind": util.DeploymentKind,
+					"metadata": map[string]interface{}{
+						"annotations": map[string]interface{}{
+							utildeployment.RevisionAnnotation: 1,
+						},
+					},
+				},
+			},
+			unexpectedFields: []field{
+				{"metadata", "annotations", utildeployment.RevisionAnnotation},
+			},
+		},
+		{
+			name: "removes deployment revision history annotation",
+			workload: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"kind": util.DeploymentKind,
+					"metadata": map[string]interface{}{
+						"annotations": map[string]interface{}{
+							utildeployment.RevisionHistoryAnnotation: "1,2",
+						},
+					},
+				},
+			},
+			unexpectedFields: []field{
+				{"metadata", "annotations", utildeployment.RevisionHistoryAnnotation},
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := RemoveIrrelevantField(tt.workload, tt.extraHooks...); err != nil {
+			if err := RemoveIrrelevantFields(tt.workload, tt.extraHooks...); err != nil {
 				t.Fatalf("RemoveIrrelevantField() expects no error but got: %v", err)
 				return
 			}

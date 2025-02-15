@@ -17,6 +17,7 @@ limitations under the License.
 package native
 
 import (
+	"bytes"
 	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -30,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog/v2"
 
+	"github.com/karmada-io/karmada/pkg/apis/work/v1alpha2"
 	"github.com/karmada-io/karmada/pkg/util"
 	"github.com/karmada-io/karmada/pkg/util/helper"
 )
@@ -67,20 +69,46 @@ func reflectDeploymentStatus(object *unstructured.Unstructured) (*runtime.RawExt
 		return nil, fmt.Errorf("failed to convert DeploymentStatus from map[string]interface{}: %v", err)
 	}
 
-	grabStatus := appsv1.DeploymentStatus{
-		Replicas:            deploymentStatus.Replicas,
-		UpdatedReplicas:     deploymentStatus.UpdatedReplicas,
-		ReadyReplicas:       deploymentStatus.ReadyReplicas,
-		AvailableReplicas:   deploymentStatus.AvailableReplicas,
-		UnavailableReplicas: deploymentStatus.UnavailableReplicas,
+	resourceTemplateGenerationInt := int64(0)
+	resourceTemplateGenerationStr := util.GetAnnotationValue(object.GetAnnotations(), v1alpha2.ResourceTemplateGenerationAnnotationKey)
+	err = runtime.Convert_string_To_int64(&resourceTemplateGenerationStr, &resourceTemplateGenerationInt, nil)
+	if err != nil {
+		klog.Errorf("Failed to parse Deployment(%s/%s) generation from annotation(%s:%s): %v", object.GetNamespace(), object.GetName(), v1alpha2.ResourceTemplateGenerationAnnotationKey, resourceTemplateGenerationStr, err)
+		return nil, err
 	}
-	return helper.BuildStatusRawExtension(grabStatus)
+
+	grabStatus := &WrappedDeploymentStatus{
+		FederatedGeneration: FederatedGeneration{
+			Generation:                 object.GetGeneration(),
+			ResourceTemplateGeneration: resourceTemplateGenerationInt,
+		},
+		DeploymentStatus: appsv1.DeploymentStatus{
+			Replicas:            deploymentStatus.Replicas,
+			UpdatedReplicas:     deploymentStatus.UpdatedReplicas,
+			ReadyReplicas:       deploymentStatus.ReadyReplicas,
+			AvailableReplicas:   deploymentStatus.AvailableReplicas,
+			UnavailableReplicas: deploymentStatus.UnavailableReplicas,
+			ObservedGeneration:  deploymentStatus.ObservedGeneration,
+		},
+	}
+
+	grabStatusRaw, err := helper.BuildStatusRawExtension(grabStatus)
+	if err != nil {
+		return nil, err
+	}
+
+	// if status is empty struct, it actually means status haven't been collected from member cluster.
+	if bytes.Equal(grabStatusRaw.Raw, []byte("{}")) {
+		return nil, nil
+	}
+
+	return grabStatusRaw, nil
 }
 
 func reflectServiceStatus(object *unstructured.Unstructured) (*runtime.RawExtension, error) {
 	serviceType, exist, err := unstructured.NestedString(object.Object, "spec", "type")
 	if err != nil {
-		klog.Errorf("Failed to get spec.type field from %s(%s/%s)")
+		klog.Errorf("Failed to get spec.type field from %s(%s/%s)", object.GetKind(), object.GetNamespace(), object.GetName())
 	}
 	if !exist {
 		klog.Errorf("Failed to get spec.type from %s(%s/%s) which should have spec.type field.",
@@ -168,15 +196,31 @@ func reflectDaemonSetStatus(object *unstructured.Unstructured) (*runtime.RawExte
 		return nil, fmt.Errorf("failed to convert DaemonSetStatus from map[string]interface{}: %v", err)
 	}
 
-	grabStatus := appsv1.DaemonSetStatus{
-		CurrentNumberScheduled: daemonSetStatus.CurrentNumberScheduled,
-		DesiredNumberScheduled: daemonSetStatus.DesiredNumberScheduled,
-		NumberAvailable:        daemonSetStatus.NumberAvailable,
-		NumberMisscheduled:     daemonSetStatus.NumberMisscheduled,
-		NumberReady:            daemonSetStatus.NumberReady,
-		UpdatedNumberScheduled: daemonSetStatus.UpdatedNumberScheduled,
-		NumberUnavailable:      daemonSetStatus.NumberUnavailable,
+	resourceTemplateGenerationInt := int64(0)
+	resourceTemplateGenerationStr := util.GetAnnotationValue(object.GetAnnotations(), v1alpha2.ResourceTemplateGenerationAnnotationKey)
+	err = runtime.Convert_string_To_int64(&resourceTemplateGenerationStr, &resourceTemplateGenerationInt, nil)
+	if err != nil {
+		klog.Errorf("Failed to parse DaemonSet(%s/%s) generation from annotation(%s:%s): %v", object.GetNamespace(), object.GetName(), v1alpha2.ResourceTemplateGenerationAnnotationKey, resourceTemplateGenerationStr, err)
+		return nil, err
 	}
+
+	grabStatus := &WrappedDaemonSetStatus{
+		FederatedGeneration: FederatedGeneration{
+			Generation:                 object.GetGeneration(),
+			ResourceTemplateGeneration: resourceTemplateGenerationInt,
+		},
+		DaemonSetStatus: appsv1.DaemonSetStatus{
+			CurrentNumberScheduled: daemonSetStatus.CurrentNumberScheduled,
+			DesiredNumberScheduled: daemonSetStatus.DesiredNumberScheduled,
+			NumberAvailable:        daemonSetStatus.NumberAvailable,
+			NumberMisscheduled:     daemonSetStatus.NumberMisscheduled,
+			NumberReady:            daemonSetStatus.NumberReady,
+			UpdatedNumberScheduled: daemonSetStatus.UpdatedNumberScheduled,
+			NumberUnavailable:      daemonSetStatus.NumberUnavailable,
+			ObservedGeneration:     daemonSetStatus.ObservedGeneration,
+		},
+	}
+
 	return helper.BuildStatusRawExtension(grabStatus)
 }
 
@@ -193,18 +237,32 @@ func reflectStatefulSetStatus(object *unstructured.Unstructured) (*runtime.RawEx
 		return nil, nil
 	}
 
+	resourceTemplateGenerationInt := int64(0)
+	resourceTemplateGenerationStr := util.GetAnnotationValue(object.GetAnnotations(), v1alpha2.ResourceTemplateGenerationAnnotationKey)
+	err = runtime.Convert_string_To_int64(&resourceTemplateGenerationStr, &resourceTemplateGenerationInt, nil)
+	if err != nil {
+		klog.Errorf("Failed to parse StatefulSet(%s/%s) generation from annotation(%s:%s): %v", object.GetNamespace(), object.GetName(), v1alpha2.ResourceTemplateGenerationAnnotationKey, resourceTemplateGenerationStr, err)
+		return nil, err
+	}
+
 	statefulSetStatus := &appsv1.StatefulSetStatus{}
 	err = helper.ConvertToTypedObject(statusMap, statefulSetStatus)
 	if err != nil {
 		return nil, fmt.Errorf("failed to convert StatefulSetStatus from map[string]interface{}: %v", err)
 	}
 
-	grabStatus := appsv1.StatefulSetStatus{
-		AvailableReplicas: statefulSetStatus.AvailableReplicas,
-		CurrentReplicas:   statefulSetStatus.CurrentReplicas,
-		ReadyReplicas:     statefulSetStatus.ReadyReplicas,
-		Replicas:          statefulSetStatus.Replicas,
-		UpdatedReplicas:   statefulSetStatus.UpdatedReplicas,
+	grabStatus := &WrappedStatefulSetStatus{
+		FederatedGeneration: FederatedGeneration{
+			Generation:                 object.GetGeneration(),
+			ResourceTemplateGeneration: resourceTemplateGenerationInt,
+		},
+		StatefulSetStatus: appsv1.StatefulSetStatus{
+			AvailableReplicas: statefulSetStatus.AvailableReplicas,
+			CurrentReplicas:   statefulSetStatus.CurrentReplicas,
+			ReadyReplicas:     statefulSetStatus.ReadyReplicas,
+			Replicas:          statefulSetStatus.Replicas,
+			UpdatedReplicas:   statefulSetStatus.UpdatedReplicas,
+		},
 	}
 	return helper.BuildStatusRawExtension(grabStatus)
 }

@@ -38,7 +38,6 @@ spec:
         karmada-app: kube-controller-manager
     spec:
       automountServiceAccountToken: false
-      priorityClassName: system-node-critical
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -51,20 +50,20 @@ spec:
       containers:
       - name: kube-controller-manager
         image: {{ .Image }}
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: {{ .ImagePullPolicy }}
         command:
         - kube-controller-manager
         - --allocate-node-cidrs=true
-        - --kubeconfig=/etc/karmada/kubeconfig
-        - --authentication-kubeconfig=/etc/karmada/kubeconfig
-        - --authorization-kubeconfig=/etc/karmada/kubeconfig
+        - --kubeconfig=/etc/karmada/config/karmada.config
+        - --authentication-kubeconfig=/etc/karmada/config/karmada.config
+        - --authorization-kubeconfig=/etc/karmada/config/karmada.config
         - --bind-address=0.0.0.0
         - --client-ca-file=/etc/karmada/pki/ca.crt
         - --cluster-cidr=10.244.0.0/16
         - --cluster-name=karmada
         - --cluster-signing-cert-file=/etc/karmada/pki/ca.crt
         - --cluster-signing-key-file=/etc/karmada/pki/ca.key
-        - --controllers=namespace,garbagecollector,serviceaccount-token,ttl-after-finished,bootstrapsigner,csrapproving,csrcleaner,csrsigning,clusterrole-aggregation
+        - --controllers=namespace,garbagecollector,serviceaccount-token,ttl-after-finished,bootstrapsigner,csrcleaner,csrsigning,clusterrole-aggregation
         - --leader-elect=true
         - --node-cidr-mask-size=24
         - --root-ca-file=/etc/karmada/pki/ca.crt
@@ -86,14 +85,13 @@ spec:
         - name: karmada-certs
           mountPath: /etc/karmada/pki
           readOnly: true
-        - name: kubeconfig
-          mountPath: /etc/karmada/kubeconfig
-          subPath: kubeconfig
+        - name: karmada-config
+          mountPath: /etc/karmada/config
       volumes:
         - name: karmada-certs
           secret:
             secretName: {{ .KarmadaCertsSecret }}
-        - name: kubeconfig
+        - name: karmada-config
           secret:
             secretName: {{ .KubeconfigSecret }}
 `
@@ -124,15 +122,15 @@ spec:
       containers:
       - name: karmada-controller-manager
         image: {{ .Image }}
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: {{ .ImagePullPolicy }}
         command:
         - /bin/karmada-controller-manager
-        - --kubeconfig=/etc/karmada/kubeconfig
-        - --bind-address=0.0.0.0
+        - --kubeconfig=/etc/karmada/config/karmada.config
+        - --metrics-bind-address=:8080
         - --cluster-status-update-frequency=10s
-        - --secure-port=10357
         - --failover-eviction-timeout=30s
         - --leader-elect-resource-namespace={{ .SystemNamespace }}
+        - --health-probe-bind-address=0.0.0.0:10357
         - --v=4
         livenessProbe:
           httpGet:
@@ -143,12 +141,15 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 15
           timeoutSeconds: 5
+        ports:
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
         volumeMounts:
-        - name: kubeconfig
-          subPath: kubeconfig
-          mountPath: /etc/karmada/kubeconfig
+        - name: karmada-config
+          mountPath: /etc/karmada/config
       volumes:
-      - name: kubeconfig
+      - name: karmada-config
         secret:
           secretName: {{ .KubeconfigSecret }}
 `
@@ -180,14 +181,17 @@ spec:
       containers:
       - name: karmada-scheduler
         image: {{ .Image }}
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: {{ .ImagePullPolicy }}
         command:
         - /bin/karmada-scheduler
-        - --kubeconfig=/etc/karmada/kubeconfig
-        - --bind-address=0.0.0.0
-        - --secure-port=10351
+        - --kubeconfig=/etc/karmada/config/karmada.config
+        - --metrics-bind-address=0.0.0.0:8080
+        - --health-probe-bind-address=0.0.0.0:10351
         - --enable-scheduler-estimator=true
         - --leader-elect-resource-namespace={{ .SystemNamespace }}
+        - --scheduler-estimator-ca-file=/etc/karmada/pki/ca.crt
+        - --scheduler-estimator-cert-file=/etc/karmada/pki/karmada.crt
+        - --scheduler-estimator-key-file=/etc/karmada/pki/karmada.key
         - --v=4
         livenessProbe:
           httpGet:
@@ -198,12 +202,21 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 15
           timeoutSeconds: 5
+        ports:
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
         volumeMounts:
-        - name: kubeconfig
-          subPath: kubeconfig
-          mountPath: /etc/karmada/kubeconfig
+        - name: karmada-certs
+          mountPath: /etc/karmada/pki
+          readOnly: true
+        - name: karmada-config
+          mountPath: /etc/karmada/config
       volumes:
-        - name: kubeconfig
+        - name: karmada-certs
+          secret:
+            secretName: {{ .KarmadaCertsSecret }}
+        - name: karmada-config
           secret:
             secretName: {{ .KubeconfigSecret }}
 `
@@ -235,12 +248,16 @@ spec:
       containers:
       - name: karmada-descheduler
         image: {{ .Image }}
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: {{ .ImagePullPolicy }}
         command:
         - /bin/karmada-descheduler
-        - --kubeconfig=/etc/karmada/kubeconfig
-        - --bind-address=0.0.0.0
+        - --kubeconfig=/etc/karmada/config/karmada.config
+        - --metrics-bind-address=0.0.0.0:8080
+        - --health-probe-bind-address=0.0.0.0:10358
         - --leader-elect-resource-namespace={{ .SystemNamespace }}
+        - --scheduler-estimator-ca-file=/etc/karmada/pki/ca.crt
+        - --scheduler-estimator-cert-file=/etc/karmada/pki/karmada.crt
+        - --scheduler-estimator-key-file=/etc/karmada/pki/karmada.key
         - --v=4
         livenessProbe:
           httpGet:
@@ -251,12 +268,21 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 15
           timeoutSeconds: 5
+        ports:
+        - containerPort: 8080
+          name: metrics
+          protocol: TCP
         volumeMounts:
-        - name: kubeconfig
-          subPath: kubeconfig
-          mountPath: /etc/karmada/kubeconfig
+        - name: karmada-certs
+          mountPath: /etc/karmada/pki
+          readOnly: true
+        - name: karmada-config
+          mountPath: /etc/karmada/config
       volumes:
-        - name: kubeconfig
+        - name: karmada-certs
+          secret:
+            secretName: {{ .KarmadaCertsSecret }}
+        - name: karmada-config
           secret:
             secretName: {{ .KubeconfigSecret }}
 `

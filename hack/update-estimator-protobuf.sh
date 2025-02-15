@@ -20,8 +20,6 @@ set -o pipefail
 
 KARMADA_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 
-# Use `hack/generate-proto.sh` to generate proto files.
-
 DEFAULT_GOPATH=$(go env GOPATH | awk -F ':' '{print $1}')
 export GOPATH=${DEFAULT_GOPATH}
 export PATH=$PATH:$GOPATH/bin
@@ -45,7 +43,7 @@ source "${KARMADA_ROOT}"/hack/util.sh
 util:create_gopath_tree "${KARMADA_ROOT}" "${go_path}"
 export GOPATH="${go_path}"
 
-#ref https://github.com/kubernetes/kubernetes/blob/master/hack/update-generated-protobuf-dockerized.sh
+# https://github.com/kubernetes/kubernetes/blob/release-1.23/hack/update-generated-protobuf-dockerized.sh
 if [[ -z "$(which protoc)" || $(protoc --version | sed -r "s/libprotoc ([0-9]+).*/\1/g") -lt 3 ]]; then
   echo "Generating protobuf requires protoc 3.0.0-beta1 or newer. Please download and"
   echo "install the platform appropriate Protobuf package for your OS: "
@@ -61,12 +59,12 @@ PACKAGES=(
 )
 
 APIMACHINERY_PKGS=(
-  +k8s.io/apimachinery/pkg/util/intstr
-  +k8s.io/apimachinery/pkg/api/resource
-  +k8s.io/apimachinery/pkg/runtime/schema
-  +k8s.io/apimachinery/pkg/runtime
-  k8s.io/apimachinery/pkg/apis/meta/v1
-  k8s.io/api/core/v1
+  -k8s.io/apimachinery/pkg/util/intstr
+  -k8s.io/apimachinery/pkg/api/resource
+  -k8s.io/apimachinery/pkg/runtime/schema
+  -k8s.io/apimachinery/pkg/runtime
+  -k8s.io/apimachinery/pkg/apis/meta/v1
+  -k8s.io/api/core/v1
 )
 
 go-to-protobuf \
@@ -74,10 +72,7 @@ go-to-protobuf \
   --apimachinery-packages=$(IFS=, ; echo "${APIMACHINERY_PKGS[*]}") \
   --packages=$(IFS=, ; echo "${PACKAGES[*]}") \
   --proto-import="${KARMADA_ROOT}/vendor" \
-  --proto-import="${KARMADA_ROOT}/third_party/protobuf"
+  --proto-import="${KARMADA_ROOT}/third_party/protobuf" \
+  --output-dir="${GOPATH}/src"
 
 go generate ./pkg/estimator/service
-
-# The `go-to-protobuf` tool will modify all import proto files in vendor, so we should use go mod vendor to prevent.
-export GOPATH=${DEFAULT_GOPATH}
-go mod vendor

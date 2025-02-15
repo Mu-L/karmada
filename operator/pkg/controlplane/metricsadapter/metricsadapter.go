@@ -42,15 +42,16 @@ func EnsureKarmadaMetricAdapter(client clientset.Interface, cfg *operatorv1alpha
 
 func installKarmadaMetricAdapter(client clientset.Interface, cfg *operatorv1alpha1.KarmadaMetricsAdapter, name, namespace string) error {
 	metricAdapterBytes, err := util.ParseTemplate(KarmadaMetricsAdapterDeployment, struct {
-		DeploymentName, Namespace, Image     string
-		KubeconfigSecret, KarmadaCertsSecret string
-		Replicas                             *int32
+		DeploymentName, Namespace, Image, ImagePullPolicy string
+		KubeconfigSecret, KarmadaCertsSecret              string
+		Replicas                                          *int32
 	}{
 		DeploymentName:     util.KarmadaMetricsAdapterName(name),
 		Namespace:          namespace,
 		Image:              cfg.Image.Name(),
+		ImagePullPolicy:    string(cfg.ImagePullPolicy),
 		Replicas:           cfg.Replicas,
-		KubeconfigSecret:   util.AdminKubeconfigSecretName(name),
+		KubeconfigSecret:   util.ComponentKarmadaConfigSecretName(util.KarmadaMetricsAdapterName(name)),
 		KarmadaCertsSecret: util.KarmadaCertSecretName(name),
 	})
 	if err != nil {
@@ -62,7 +63,8 @@ func installKarmadaMetricAdapter(client clientset.Interface, cfg *operatorv1alph
 		return fmt.Errorf("err when decoding KarmadaMetricAdapter Deployment: %w", err)
 	}
 
-	patcher.NewPatcher().WithAnnotations(cfg.Annotations).WithLabels(cfg.Labels).WithResources(cfg.Resources).ForDeployment(metricAdapter)
+	patcher.NewPatcher().WithAnnotations(cfg.Annotations).WithLabels(cfg.Labels).WithPriorityClassName(cfg.CommonSettings.PriorityClassName).
+		WithResources(cfg.Resources).ForDeployment(metricAdapter)
 
 	if err := apiclient.CreateOrUpdateDeployment(client, metricAdapter); err != nil {
 		return fmt.Errorf("error when creating deployment for %s, err: %w", metricAdapter.Name, err)

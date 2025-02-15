@@ -20,6 +20,8 @@ import (
 	"time"
 
 	discoveryv1 "k8s.io/api/discovery/v1"
+
+	workv1alpha2 "github.com/karmada-io/karmada/pkg/apis/work/v1alpha2"
 )
 
 // Define labels used by karmada system.
@@ -52,8 +54,13 @@ const (
 	// FederatedResourceQuotaNameLabel is added to Work to specify associated FederatedResourceQuota's name.
 	FederatedResourceQuotaNameLabel = "federatedresourcequota.karmada.io/name"
 
-	// ManagedByKarmadaLabel is a reserved karmada label to indicate whether resources are managed by karmada controllers.
+	// ManagedByKarmadaLabel is a reserved karmada label to indicate whether resources are member cluster resources
+	// synchronized by karmada controllers.
 	ManagedByKarmadaLabel = "karmada.io/managed"
+
+	// KarmadaSystemLabel is a reserved karmada label to indicate whether resources are system level resources
+	// managed by karmada controllers.
+	KarmadaSystemLabel = "karmada.io/system"
 
 	// EndpointSliceDispatchControllerLabelValue indicates the endpointSlice are controlled by Karmada
 	EndpointSliceDispatchControllerLabelValue = "endpointslice-dispatch-controller.karmada.io"
@@ -65,11 +72,17 @@ const (
 
 	// ResourceTemplateClaimedByLabel is added to the ResourceTemplate, indicating which resource is in charge of propagating the ResourceTemplate.
 	ResourceTemplateClaimedByLabel = "resourcetemplate.karmada.io/claimed-by"
+
+	// EndpointSliceWorkManagedByLabel is added to the EndpointSlice work collected from member clusters, represents which manage the endpointslice work
+	EndpointSliceWorkManagedByLabel = "endpointslice.karmada.io/managed-by"
 )
 
 const (
-	// ManagedByKarmadaLabelValue indicates that resources are managed by karmada controllers.
+	// ManagedByKarmadaLabelValue indicates that these are workloads in member cluster synchronized by karmada controllers.
 	ManagedByKarmadaLabelValue = "true"
+
+	// KarmadaSystemLabelValue indicates that resources are system level resources managed by karmada controllers.
+	KarmadaSystemLabelValue = "true"
 
 	// RetainReplicasValue is an optional value of RetainReplicasLabel, indicating retain
 	RetainReplicasValue = "true"
@@ -95,7 +108,7 @@ const (
 	// The overrides items should be sorted alphabetically in ascending order by ClusterOverridePolicy's name.
 	AppliedClusterOverrides = "policy.karmada.io/applied-cluster-overrides"
 
-	// EndPointSliceProvisionClusterAnnotation is added to work of the dispatch EndpointSlice in consumption clusters's namespace.
+	// EndpointSliceProvisionClusterAnnotation is added to work of the dispatch EndpointSlice in consumption clusters' namespace.
 	EndpointSliceProvisionClusterAnnotation = "endpointslice.karmada.io/provision-cluster"
 )
 
@@ -113,6 +126,10 @@ const (
 	// before ResourceBinding itself is deleted.
 	BindingControllerFinalizer = "karmada.io/binding-controller"
 
+	// EndpointSliceControllerFinalizer is added to Work, which holds EndpointSlice collected from member clusters,
+	// to ensure related EndpointSlices are deleted before Work itself is deleted.
+	EndpointSliceControllerFinalizer = "karmada.io/endpointslice-controller"
+
 	// MCSEndpointSliceCollectControllerFinalizer is added to mcs to ensure related Works in provider clusters are deleted
 	MCSEndpointSliceCollectControllerFinalizer = "karmada.io/mcs-endpointslice-collect-controller"
 
@@ -123,8 +140,18 @@ const (
 	// before ClusterResourceBinding itself is deleted.
 	ClusterResourceBindingControllerFinalizer = "karmada.io/cluster-resource-binding-controller"
 
-	// MCSControllerFinalizer is added to Cluster to ensure service work is deleted before itself is deleted.
+	// MCSControllerFinalizer is added to MultiClusterService to ensure service work is deleted before itself is deleted.
 	MCSControllerFinalizer = "karmada.io/multiclusterservice-controller"
+
+	// PropagationPolicyControllerFinalizer is added to PropagationPolicy to ensure the related resources have been unbound before itself is deleted.
+	PropagationPolicyControllerFinalizer = "karmada.io/propagation-policy-controller"
+
+	// ClusterPropagationPolicyControllerFinalizer is added to ClusterPropagationPolicy to ensure the related resources have been unbound before itself is deleted.
+	ClusterPropagationPolicyControllerFinalizer = "karmada.io/cluster-propagation-policy-controller"
+
+	// BindingDependenciesDistributorFinalizer is added to independent binding to ensure
+	// the attached binding have been removed or cleaned up before itself is deleted.
+	BindingDependenciesDistributorFinalizer = "karmada.io/binding-dependencies-distributor"
 )
 
 const (
@@ -174,6 +201,8 @@ const (
 	ClusterRoleBindingKind = "ClusterRoleBinding"
 	// CRDKind indicates the target resource is a CustomResourceDefinition
 	CRDKind = "CustomResourceDefinition"
+	// SecretKind indicates the target resource is a Secret
+	SecretKind = "Secret"
 
 	// ServiceExportKind indicates the target resource is a serviceexport crd
 	ServiceExportKind = "ServiceExport"
@@ -198,11 +227,6 @@ const (
 	CompletionsField = "completions"
 )
 
-const (
-	// NamespaceKarmadaSystem is the karmada system namespace.
-	NamespaceKarmadaSystem = "karmada-system"
-)
-
 // ContextKey is the key of context.
 type ContextKey string
 
@@ -219,4 +243,32 @@ const (
 var (
 	// EndpointSliceGVK is the GroupVersionKind of K8s native EndpointSlice.
 	EndpointSliceGVK = discoveryv1.SchemeGroupVersion.WithKind("EndpointSlice")
+)
+
+const (
+	// DefaultFilePerm default file perm
+	DefaultFilePerm = 0640
+)
+
+var (
+	// ManagedResourceLabels is the list of labels that are applied to
+	// resources in member clusters.
+	ManagedResourceLabels = []string{
+		workv1alpha2.ResourceBindingPermanentIDLabel,
+		workv1alpha2.WorkPermanentIDLabel,
+		ManagedByKarmadaLabel,
+	}
+
+	// ManagedResourceAnnotations is the list of annotations that are applied to
+	// resources in member clusters.
+	ManagedResourceAnnotations = []string{
+		workv1alpha2.ManagedAnnotation,
+		workv1alpha2.ManagedLabels,
+		workv1alpha2.ResourceBindingNamespaceAnnotationKey,
+		workv1alpha2.ResourceBindingNameAnnotationKey,
+		workv1alpha2.ResourceTemplateUIDAnnotation,
+		workv1alpha2.ResourceTemplateGenerationAnnotationKey,
+		workv1alpha2.WorkNameAnnotation,
+		workv1alpha2.WorkNamespaceAnnotation,
+	}
 )

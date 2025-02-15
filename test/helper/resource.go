@@ -33,9 +33,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	workloadv1alpha1 "github.com/karmada-io/karmada/examples/customresourceinterpreter/apis/workload/v1alpha1"
+	appsv1alpha1 "github.com/karmada-io/karmada/pkg/apis/apps/v1alpha1"
 	autoscalingv1alpha1 "github.com/karmada-io/karmada/pkg/apis/autoscaling/v1alpha1"
 	clusterv1alpha1 "github.com/karmada-io/karmada/pkg/apis/cluster/v1alpha1"
 	networkingv1alpha1 "github.com/karmada-io/karmada/pkg/apis/networking/v1alpha1"
@@ -106,7 +107,7 @@ func NewCronFederatedHPARule(name, cron string, suspend bool, targetReplicas, ta
 		TargetReplicas:    targetReplicas,
 		TargetMinReplicas: targetMinReplicas,
 		TargetMaxReplicas: targetMaxReplicas,
-		Suspend:           pointer.Bool(suspend),
+		Suspend:           ptr.To[bool](suspend),
 	}
 }
 
@@ -129,10 +130,10 @@ func NewFederatedHPA(namespace, name, scaleTargetDeployment string) *autoscaling
 			},
 			Behavior: &autoscalingv2.HorizontalPodAutoscalerBehavior{
 				ScaleDown: &autoscalingv2.HPAScalingRules{
-					StabilizationWindowSeconds: pointer.Int32(10),
+					StabilizationWindowSeconds: ptr.To[int32](10),
 				},
 			},
-			MinReplicas: pointer.Int32(1),
+			MinReplicas: ptr.To[int32](1),
 			MaxReplicas: 1,
 			Metrics: []autoscalingv2.MetricSpec{
 				{
@@ -141,7 +142,7 @@ func NewFederatedHPA(namespace, name, scaleTargetDeployment string) *autoscaling
 						Name: corev1.ResourceCPU,
 						Target: autoscalingv2.MetricTarget{
 							Type:               autoscalingv2.UtilizationMetricType,
-							AverageUtilization: pointer.Int32(80),
+							AverageUtilization: ptr.To[int32](80),
 						},
 					},
 				},
@@ -167,7 +168,7 @@ func NewHPA(namespace, name, scaleDeployment string) *autoscalingv2.HorizontalPo
 				Name:       scaleDeployment,
 				APIVersion: "apps/v1",
 			},
-			MinReplicas: pointer.Int32(4),
+			MinReplicas: ptr.To[int32](4),
 			MaxReplicas: 6,
 			Metrics: []autoscalingv2.MetricSpec{
 				{
@@ -176,7 +177,7 @@ func NewHPA(namespace, name, scaleDeployment string) *autoscalingv2.HorizontalPo
 						Name: corev1.ResourceCPU,
 						Target: autoscalingv2.MetricTarget{
 							Type:               autoscalingv2.UtilizationMetricType,
-							AverageUtilization: pointer.Int32(80),
+							AverageUtilization: ptr.To[int32](80),
 						},
 					},
 				},
@@ -199,7 +200,7 @@ func NewDeployment(namespace string, name string) *appsv1.Deployment {
 			Name:      name,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: pointer.Int32(3),
+			Replicas: ptr.To[int32](3),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: podLabels,
 			},
@@ -304,7 +305,7 @@ func NewStatefulSet(namespace string, name string) *appsv1.StatefulSet {
 			Name:      name,
 		},
 		Spec: appsv1.StatefulSetSpec{
-			Replicas: pointer.Int32(3),
+			Replicas: ptr.To[int32](3),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: podLabels,
 			},
@@ -517,7 +518,7 @@ func NewJob(namespace string, name string) *batchv1.Job {
 					RestartPolicy: corev1.RestartPolicyNever,
 				},
 			},
-			BackoffLimit: pointer.Int32(4),
+			BackoffLimit: ptr.To[int32](4),
 		},
 	}
 }
@@ -709,7 +710,7 @@ func NewWorkload(namespace, name string) *workloadv1alpha1.Workload {
 			Name:      name,
 		},
 		Spec: workloadv1alpha1.WorkloadSpec{
-			Replicas: pointer.Int32(3),
+			Replicas: ptr.To[int32](3),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: podLabels,
@@ -739,7 +740,7 @@ func NewDeploymentWithVolumes(namespace, deploymentName string, volumes []corev1
 			Name:      deploymentName,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: pointer.Int32(3),
+			Replicas: ptr.To[int32](3),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: podLabels,
 			},
@@ -774,7 +775,7 @@ func NewDeploymentWithServiceAccount(namespace, deploymentName string, serviceAc
 		},
 		Spec: appsv1.DeploymentSpec{
 
-			Replicas: pointer.Int32(3),
+			Replicas: ptr.To[int32](3),
 			Selector: &metav1.LabelSelector{
 				MatchLabels: podLabels,
 			},
@@ -825,7 +826,7 @@ func NewConfigMap(namespace string, name string, data map[string]string) *corev1
 }
 
 // NewPVC will build a new PersistentVolumeClaim.
-func NewPVC(namespace, name string, resources corev1.ResourceRequirements, accessModes ...corev1.PersistentVolumeAccessMode) *corev1.PersistentVolumeClaim {
+func NewPVC(namespace, name string, resources corev1.VolumeResourceRequirements, accessModes ...corev1.PersistentVolumeAccessMode) *corev1.PersistentVolumeClaim {
 	return &corev1.PersistentVolumeClaim{
 		ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: namespace},
 		Spec: corev1.PersistentVolumeClaimSpec{
@@ -935,9 +936,7 @@ func NewIngress(namespace, name string) *networkingv1.Ingress {
 }
 
 // NewPodDisruptionBudget will build a new PodDisruptionBudget object.
-func NewPodDisruptionBudget(namespace, name string, maxUnAvailable intstr.IntOrString) *policyv1.PodDisruptionBudget {
-	podLabels := map[string]string{"app": "nginx"}
-
+func NewPodDisruptionBudget(namespace, name string, maxUnAvailable intstr.IntOrString, matchLabels map[string]string) *policyv1.PodDisruptionBudget {
 	return &policyv1.PodDisruptionBudget{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "policy/v1",
@@ -950,7 +949,7 @@ func NewPodDisruptionBudget(namespace, name string, maxUnAvailable intstr.IntOrS
 		Spec: policyv1.PodDisruptionBudgetSpec{
 			MaxUnavailable: &maxUnAvailable,
 			Selector: &metav1.LabelSelector{
-				MatchLabels: podLabels,
+				MatchLabels: matchLabels,
 			},
 		},
 	}
@@ -959,6 +958,10 @@ func NewPodDisruptionBudget(namespace, name string, maxUnAvailable intstr.IntOrS
 // NewWork will build a new Work object.
 func NewWork(workName, workNs, workUID string, raw []byte) *workv1alpha1.Work {
 	work := &workv1alpha1.Work{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       workv1alpha1.ResourceKindWork,
+			APIVersion: workv1alpha1.GroupVersion.Version,
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      workName,
 			Namespace: workNs,
@@ -977,4 +980,16 @@ func NewWork(workName, workNs, workUID string, raw []byte) *workv1alpha1.Work {
 	}
 
 	return work
+}
+
+// NewWorkloadRebalancer will build a new WorkloadRebalancer object.
+func NewWorkloadRebalancer(name string, objectReferences []appsv1alpha1.ObjectReference) *appsv1alpha1.WorkloadRebalancer {
+	return &appsv1alpha1.WorkloadRebalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Spec: appsv1alpha1.WorkloadRebalancerSpec{
+			Workloads: objectReferences,
+		},
+	}
 }

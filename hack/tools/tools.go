@@ -1,5 +1,4 @@
 //go:build tools
-// +build tools
 
 /*
 Copyright 2020 The Karmada Authors.
@@ -26,4 +25,5 @@ import (
 	_ "go.uber.org/mock/mockgen"
 	_ "golang.org/x/tools/cmd/goimports"
 	_ "k8s.io/code-generator"
+	_ "k8s.io/kube-openapi/cmd/openapi-gen"
 )

@@ -44,9 +44,13 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             - /bin/karmada-descheduler
-            - --kubeconfig=/etc/kubeconfig
-            - --bind-address=0.0.0.0
+            - --kubeconfig=/etc/karmada/config/karmada.config
+            - --metrics-bind-address=0.0.0.0:8080
+            - --health-probe-bind-address=0.0.0.0:10358
             - --leader-elect-resource-namespace={{ .Namespace }}
+            - --scheduler-estimator-ca-file=/etc/karmada/pki/ca.crt
+            - --scheduler-estimator-cert-file=/etc/karmada/pki/karmada.crt
+            - --scheduler-estimator-key-file=/etc/karmada/pki/karmada.key
             - --v=4
           livenessProbe:
             httpGet:
@@ -57,14 +61,23 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 15
             timeoutSeconds: 5
+          ports:
+            - containerPort: 8080
+              name: metrics
+              protocol: TCP
           volumeMounts:
-            - name: kubeconfig
-              subPath: kubeconfig
-              mountPath: /etc/kubeconfig
+            - name: karmada-config
+              mountPath: /etc/karmada/config
+            - name: k8s-certs
+              mountPath: /etc/karmada/pki
+              readOnly: true
       volumes:
-        - name: kubeconfig
+        - name: karmada-config
           secret:
-            secretName: kubeconfig
+            secretName: karmada-descheduler-config
+        - name: k8s-certs
+          secret:
+            secretName: karmada-cert
 `
 
 // DeploymentReplace is a struct to help to concrete

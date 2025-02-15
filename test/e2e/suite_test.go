@@ -31,11 +31,14 @@ import (
 	"github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	mapper "k8s.io/client-go/restmapper"
 	"k8s.io/client-go/tools/clientcmd"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/kind/pkg/cluster"
@@ -78,6 +81,10 @@ const (
 	cronFedratedHPANamePrefix     = "cronfhpa-"
 	resourceRegistryPrefix        = "rr-"
 	mcsNamePrefix                 = "mcs-"
+	ppNamePrefix                  = "pp-"
+	cppNamePrefix                 = "cpp-"
+	workloadRebalancerPrefix      = "rebalancer-"
+	remedyNamePrefix              = "remedy-"
 
 	updateDeploymentReplicas  = 2
 	updateStatefulSetReplicas = 2
@@ -96,14 +103,18 @@ var (
 )
 
 var (
+	hostContext           string
 	karmadaContext        string
 	kubeconfig            string
 	karmadactlPath        string
 	restConfig            *rest.Config
 	karmadaHost           string
+	hostKubeClient        kubernetes.Interface
 	kubeClient            kubernetes.Interface
 	karmadaClient         karmada.Interface
 	dynamicClient         dynamic.Interface
+	discoveryClient       *discovery.DiscoveryClient
+	restMapper            meta.RESTMapper
 	controlPlaneClient    client.Client
 	testNamespace         string
 	clusterProvider       *cluster.Provider
@@ -112,11 +123,12 @@ var (
 )
 
 func init() {
-	// usage ginkgo -- --poll-interval=5s --pollTimeout=5m
-	// eg. ginkgo -v --race --trace --fail-fast -p --randomize-all ./test/e2e/ -- --poll-interval=5s --pollTimeout=5m
+	// usage ginkgo -- --poll-interval=5s --poll-timeout=5m
+	// eg. ginkgo -v --race --trace --fail-fast -p --randomize-all ./test/e2e/ -- --poll-interval=5s --poll-timeout=5m
 	flag.DurationVar(&pollInterval, "poll-interval", 5*time.Second, "poll-interval defines the interval time for a poll operation")
 	flag.DurationVar(&pollTimeout, "poll-timeout", 300*time.Second, "poll-timeout defines the time which the poll operation times out")
-	flag.StringVar(&karmadaContext, "karmada-context", karmadaContext, "Name of the cluster context in control plane kubeconfig file.")
+	flag.StringVar(&hostContext, "host-context", "karmada-host", "Name of the host cluster context in control plane kubeconfig file.")
+	flag.StringVar(&karmadaContext, "karmada-context", "karmada-apiserver", "Name of the karmada cluster context in control plane kubeconfig file.")
 }
 
 func TestE2E(t *testing.T) {
@@ -126,7 +138,7 @@ func TestE2E(t *testing.T) {
 
 var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 	return nil
-}, func(bytes []byte) {
+}, func([]byte) {
 	kubeconfig = os.Getenv("KUBECONFIG")
 	gomega.Expect(kubeconfig).ShouldNot(gomega.BeEmpty())
 
@@ -139,6 +151,13 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 	gomega.Expect(karmadactlPath).ShouldNot(gomega.BeEmpty())
 
 	clusterProvider = cluster.NewProvider()
+
+	restConfig, err = framework.LoadRESTClientConfig(kubeconfig, hostContext)
+	gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
+
+	hostKubeClient, err = kubernetes.NewForConfig(restConfig)
+	gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
+
 	restConfig, err = framework.LoadRESTClientConfig(kubeconfig, karmadaContext)
 	gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 
@@ -153,6 +172,13 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 	dynamicClient, err = dynamic.NewForConfig(restConfig)
 	gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 
+	discoveryClient, err = discovery.NewDiscoveryClientForConfig(restConfig)
+	gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
+
+	groupResources, err := mapper.GetAPIGroupResources(discoveryClient)
+	gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
+	restMapper = mapper.NewDiscoveryRESTMapper(groupResources)
+
 	controlPlaneClient = gclient.NewForConfigOrDie(restConfig)
 
 	framework.InitClusterInformation(karmadaClient, controlPlaneClient)
@@ -162,6 +188,13 @@ var _ = ginkgo.SynchronizedBeforeSuite(func() []byte {
 	gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 
 	framework.WaitNamespacePresentOnClusters(framework.ClusterNames(), testNamespace)
+})
+
+var _ = ginkgo.JustAfterEach(func() {
+	// check if the current test case failed
+	if ginkgo.CurrentSpecReport().Failed() {
+		printAllBindingAndRelatedObjects()
+	}
 })
 
 var _ = ginkgo.SynchronizedAfterSuite(func() {
@@ -238,16 +271,13 @@ func deleteCluster(clusterName, kubeConfigPath string) error {
 
 // deleteClusterLabel delete cluster label of E2E
 func deleteClusterLabel(c client.Client, clusterName string) error {
-	err := wait.PollImmediate(2*time.Second, 10*time.Second, func() (done bool, err error) {
+	err := wait.PollUntilContextTimeout(context.TODO(), 2*time.Second, 10*time.Second, true, func(ctx context.Context) (done bool, err error) {
 		clusterObj := &clusterv1alpha1.Cluster{}
-		if err := c.Get(context.TODO(), client.ObjectKey{Name: clusterName}, clusterObj); err != nil {
-			if apierrors.IsConflict(err) {
-				return false, nil
-			}
+		if err := c.Get(ctx, client.ObjectKey{Name: clusterName}, clusterObj); err != nil {
 			return false, err
 		}
 		delete(clusterObj.Labels, "location")
-		if err := c.Update(context.TODO(), clusterObj); err != nil {
+		if err := c.Update(ctx, clusterObj); err != nil {
 			if apierrors.IsConflict(err) {
 				return false, nil
 			}

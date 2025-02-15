@@ -84,15 +84,16 @@ func getComponentManifests(name, namespace string, featureGates map[string]bool,
 
 func getKubeControllerManagerManifest(name, namespace string, cfg *operatorv1alpha1.KubeControllerManager) (*appsv1.Deployment, error) {
 	kubeControllerManagerBytes, err := util.ParseTemplate(KubeControllerManagerDeployment, struct {
-		DeploymentName, Namespace, Image     string
-		KarmadaCertsSecret, KubeconfigSecret string
-		Replicas                             *int32
+		DeploymentName, Namespace, Image, ImagePullPolicy string
+		KarmadaCertsSecret, KubeconfigSecret              string
+		Replicas                                          *int32
 	}{
 		DeploymentName:     util.KubeControllerManagerName(name),
 		Namespace:          namespace,
 		Image:              cfg.Image.Name(),
+		ImagePullPolicy:    string(cfg.ImagePullPolicy),
 		KarmadaCertsSecret: util.KarmadaCertSecretName(name),
-		KubeconfigSecret:   util.AdminKubeconfigSecretName(name),
+		KubeconfigSecret:   util.ComponentKarmadaConfigSecretName(util.KubeControllerManagerName(name)),
 		Replicas:           cfg.Replicas,
 	})
 	if err != nil {
@@ -105,6 +106,7 @@ func getKubeControllerManagerManifest(name, namespace string, cfg *operatorv1alp
 	}
 
 	patcher.NewPatcher().WithAnnotations(cfg.Annotations).
+		WithPriorityClassName(cfg.CommonSettings.PriorityClassName).
 		WithLabels(cfg.Labels).WithExtraArgs(cfg.ExtraArgs).WithResources(cfg.Resources).ForDeployment(kcm)
 	return kcm, nil
 }
@@ -113,13 +115,14 @@ func getKarmadaControllerManagerManifest(name, namespace string, featureGates ma
 	karmadaControllerManagerBytes, err := util.ParseTemplate(KamradaControllerManagerDeployment, struct {
 		Replicas                                   *int32
 		DeploymentName, Namespace, SystemNamespace string
-		Image, KubeconfigSecret                    string
+		Image, ImagePullPolicy, KubeconfigSecret   string
 	}{
 		DeploymentName:   util.KarmadaControllerManagerName(name),
 		Namespace:        namespace,
 		SystemNamespace:  constants.KarmadaSystemNamespace,
 		Image:            cfg.Image.Name(),
-		KubeconfigSecret: util.AdminKubeconfigSecretName(name),
+		ImagePullPolicy:  string(cfg.ImagePullPolicy),
+		KubeconfigSecret: util.ComponentKarmadaConfigSecretName(util.KarmadaControllerManagerName(name)),
 		Replicas:         cfg.Replicas,
 	})
 	if err != nil {
@@ -132,22 +135,25 @@ func getKarmadaControllerManagerManifest(name, namespace string, featureGates ma
 	}
 
 	patcher.NewPatcher().WithAnnotations(cfg.Annotations).WithLabels(cfg.Labels).
+		WithPriorityClassName(cfg.CommonSettings.PriorityClassName).
 		WithExtraArgs(cfg.ExtraArgs).WithFeatureGates(featureGates).WithResources(cfg.Resources).ForDeployment(kcm)
 	return kcm, nil
 }
 
 func getKarmadaSchedulerManifest(name, namespace string, featureGates map[string]bool, cfg *operatorv1alpha1.KarmadaScheduler) (*appsv1.Deployment, error) {
 	karmadaSchedulerBytes, err := util.ParseTemplate(KarmadaSchedulerDeployment, struct {
-		Replicas                                   *int32
-		DeploymentName, Namespace, SystemNamespace string
-		Image, KubeconfigSecret                    string
+		Replicas                                                     *int32
+		DeploymentName, Namespace, SystemNamespace                   string
+		Image, ImagePullPolicy, KubeconfigSecret, KarmadaCertsSecret string
 	}{
-		DeploymentName:   util.KarmadaSchedulerName(name),
-		Namespace:        namespace,
-		SystemNamespace:  constants.KarmadaSystemNamespace,
-		Image:            cfg.Image.Name(),
-		KubeconfigSecret: util.AdminKubeconfigSecretName(name),
-		Replicas:         cfg.Replicas,
+		DeploymentName:     util.KarmadaSchedulerName(name),
+		Namespace:          namespace,
+		SystemNamespace:    constants.KarmadaSystemNamespace,
+		Image:              cfg.Image.Name(),
+		ImagePullPolicy:    string(cfg.ImagePullPolicy),
+		KubeconfigSecret:   util.ComponentKarmadaConfigSecretName(util.KarmadaSchedulerName(name)),
+		KarmadaCertsSecret: util.KarmadaCertSecretName(name),
+		Replicas:           cfg.Replicas,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error when parsing karmada-scheduler deployment template: %w", err)
@@ -159,22 +165,25 @@ func getKarmadaSchedulerManifest(name, namespace string, featureGates map[string
 	}
 
 	patcher.NewPatcher().WithAnnotations(cfg.Annotations).WithLabels(cfg.Labels).
+		WithPriorityClassName(cfg.CommonSettings.PriorityClassName).
 		WithExtraArgs(cfg.ExtraArgs).WithFeatureGates(featureGates).WithResources(cfg.Resources).ForDeployment(scheduler)
 	return scheduler, nil
 }
 
 func getKarmadaDeschedulerManifest(name, namespace string, featureGates map[string]bool, cfg *operatorv1alpha1.KarmadaDescheduler) (*appsv1.Deployment, error) {
 	karmadaDeschedulerBytes, err := util.ParseTemplate(KarmadaDeschedulerDeployment, struct {
-		Replicas                                   *int32
-		DeploymentName, Namespace, SystemNamespace string
-		Image, KubeconfigSecret                    string
+		Replicas                                                     *int32
+		DeploymentName, Namespace, SystemNamespace                   string
+		Image, ImagePullPolicy, KubeconfigSecret, KarmadaCertsSecret string
 	}{
-		DeploymentName:   util.KarmadaDeschedulerName(name),
-		Namespace:        namespace,
-		SystemNamespace:  constants.KarmadaSystemNamespace,
-		Image:            cfg.Image.Name(),
-		KubeconfigSecret: util.AdminKubeconfigSecretName(name),
-		Replicas:         cfg.Replicas,
+		DeploymentName:     util.KarmadaDeschedulerName(name),
+		Namespace:          namespace,
+		SystemNamespace:    constants.KarmadaSystemNamespace,
+		Image:              cfg.Image.Name(),
+		ImagePullPolicy:    string(cfg.ImagePullPolicy),
+		KubeconfigSecret:   util.ComponentKarmadaConfigSecretName(util.KarmadaDeschedulerName(name)),
+		KarmadaCertsSecret: util.KarmadaCertSecretName(name),
+		Replicas:           cfg.Replicas,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error when parsing karmada-descheduler deployment template: %w", err)
@@ -186,6 +195,7 @@ func getKarmadaDeschedulerManifest(name, namespace string, featureGates map[stri
 	}
 
 	patcher.NewPatcher().WithAnnotations(cfg.Annotations).WithLabels(cfg.Labels).
+		WithPriorityClassName(cfg.CommonSettings.PriorityClassName).
 		WithExtraArgs(cfg.ExtraArgs).WithFeatureGates(featureGates).WithResources(cfg.Resources).ForDeployment(descheduler)
 
 	return descheduler, nil

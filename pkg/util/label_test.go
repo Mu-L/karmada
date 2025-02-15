@@ -20,10 +20,8 @@ import (
 	"reflect"
 	"testing"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
-	workv1alpha1 "github.com/karmada-io/karmada/pkg/apis/work/v1alpha1"
 	workv1alpha2 "github.com/karmada-io/karmada/pkg/apis/work/v1alpha2"
 )
 
@@ -231,14 +229,46 @@ func TestDedupeAndMergeLabels(t *testing.T) {
 
 func TestRemoveLabel(t *testing.T) {
 	type args struct {
-		obj      *unstructured.Unstructured
-		labelKey string
+		obj       *unstructured.Unstructured
+		labelKeys []string
 	}
 	tests := []struct {
 		name     string
 		args     args
 		expected *unstructured.Unstructured
 	}{
+		{
+			name: "empty labelKeys",
+			args: args{
+				obj: &unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"apiVersion": "apps/v1",
+						"kind":       "Deployment",
+						"metadata": map[string]interface{}{
+							"name":   "demo-deployment",
+							"labels": map[string]interface{}{"foo": "bar"},
+						},
+						"spec": map[string]interface{}{
+							"replicas": 2,
+						},
+					},
+				},
+				labelKeys: []string{},
+			},
+			expected: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":   "demo-deployment",
+						"labels": map[string]interface{}{"foo": "bar"},
+					},
+					"spec": map[string]interface{}{
+						"replicas": 2,
+					},
+				},
+			},
+		},
 		{
 			name: "nil object labels",
 			args: args{
@@ -251,8 +281,10 @@ func TestRemoveLabel(t *testing.T) {
 						},
 						"spec": map[string]interface{}{
 							"replicas": 2,
-						}}},
-				labelKey: "foo",
+						},
+					},
+				},
+				labelKeys: []string{"foo"},
 			},
 			expected: &unstructured.Unstructured{
 				Object: map[string]interface{}{
@@ -263,10 +295,12 @@ func TestRemoveLabel(t *testing.T) {
 					},
 					"spec": map[string]interface{}{
 						"replicas": 2,
-					}}},
+					},
+				},
+			},
 		},
 		{
-			name: "same labelKey",
+			name: "same labelKeys",
 			args: args{
 				obj: &unstructured.Unstructured{
 					Object: map[string]interface{}{
@@ -278,8 +312,10 @@ func TestRemoveLabel(t *testing.T) {
 						},
 						"spec": map[string]interface{}{
 							"replicas": 2,
-						}}},
-				labelKey: "foo",
+						},
+					},
+				},
+				labelKeys: []string{"foo"},
 			},
 			expected: &unstructured.Unstructured{
 				Object: map[string]interface{}{
@@ -291,10 +327,12 @@ func TestRemoveLabel(t *testing.T) {
 					},
 					"spec": map[string]interface{}{
 						"replicas": 2,
-					}}},
+					},
+				},
+			},
 		},
 		{
-			name: "different labelKey",
+			name: "different labelKeys",
 			args: args{
 				obj: &unstructured.Unstructured{
 					Object: map[string]interface{}{
@@ -306,8 +344,10 @@ func TestRemoveLabel(t *testing.T) {
 						},
 						"spec": map[string]interface{}{
 							"replicas": 2,
-						}}},
-				labelKey: "foo1",
+						},
+					},
+				},
+				labelKeys: []string{"foo1"},
 			},
 			expected: &unstructured.Unstructured{
 				Object: map[string]interface{}{
@@ -319,12 +359,78 @@ func TestRemoveLabel(t *testing.T) {
 					},
 					"spec": map[string]interface{}{
 						"replicas": 2,
-					}}},
+					},
+				},
+			},
+		},
+		{
+			name: "same labelKeys of different length",
+			args: args{
+				obj: &unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"apiVersion": "apps/v1",
+						"kind":       "Deployment",
+						"metadata": map[string]interface{}{
+							"name":   "demo-deployment",
+							"labels": map[string]interface{}{"foo": "bar", "foo1": "bar1"},
+						},
+						"spec": map[string]interface{}{
+							"replicas": 2,
+						},
+					},
+				},
+				labelKeys: []string{"foo", "foo1"},
+			},
+			expected: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":   "demo-deployment",
+						"labels": map[string]interface{}{},
+					},
+					"spec": map[string]interface{}{
+						"replicas": 2,
+					},
+				},
+			},
+		},
+		{
+			name: "different labelKeys of different length",
+			args: args{
+				obj: &unstructured.Unstructured{
+					Object: map[string]interface{}{
+						"apiVersion": "apps/v1",
+						"kind":       "Deployment",
+						"metadata": map[string]interface{}{
+							"name":   "demo-deployment",
+							"labels": map[string]interface{}{"foo": "bar", "foo1": "bar1"},
+						},
+						"spec": map[string]interface{}{
+							"replicas": 2,
+						},
+					},
+				},
+				labelKeys: []string{"foo2", "foo3"},
+			},
+			expected: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name":   "demo-deployment",
+						"labels": map[string]interface{}{"foo": "bar", "foo1": "bar1"},
+					},
+					"spec": map[string]interface{}{
+						"replicas": 2,
+					},
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			RemoveLabels(tt.args.obj, tt.args.labelKey)
+			RemoveLabels(tt.args.obj, tt.args.labelKeys...)
 			if !reflect.DeepEqual(tt.args.obj, tt.expected) {
 				t.Errorf("RemoveLabel() = %v, want %v", tt.args.obj, tt.expected)
 			}
@@ -528,65 +634,71 @@ func TestRetainLabels(t *testing.T) {
 func TestRecordManagedLabels(t *testing.T) {
 	tests := []struct {
 		name     string
-		object   *workv1alpha1.Work
-		expected *workv1alpha1.Work
+		object   *unstructured.Unstructured
+		expected *unstructured.Unstructured
 	}{
 		{
 			name: "nil label",
-			object: &workv1alpha1.Work{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "work.karmada.io/v1alpha1",
-					Kind:       "Work",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "demo-work-1",
-					Namespace: "cluster1-ns",
-					Labels:    nil,
+			object: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name": "demo-deployment-1",
+					},
+					"spec": map[string]interface{}{
+						"replicas": 2,
+					},
 				},
 			},
-			expected: &workv1alpha1.Work{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "work.karmada.io/v1alpha1",
-					Kind:       "Work",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "demo-work-1",
-					Namespace: "cluster1-ns",
-					Annotations: map[string]string{
-						workv1alpha2.ManagedLabels: "",
+			expected: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name": "demo-deployment-1",
+						"annotations": map[string]interface{}{
+							workv1alpha2.ManagedLabels: "",
+						},
 					},
-					Labels: nil,
+					"spec": map[string]interface{}{
+						"replicas": 2,
+					},
 				},
 			},
 		},
 		{
-			name: "object has has labels",
-			object: &workv1alpha1.Work{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "work.karmada.io/v1alpha1",
-					Kind:       "Work",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "demo-work-1",
-					Namespace: "cluster1-ns",
-					Labels: map[string]string{
-						"foo": "bar",
+			name: "object has labels",
+			object: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name": "demo-deployment-1",
+						"labels": map[string]interface{}{
+							"foo": "foo",
+						},
+					},
+					"spec": map[string]interface{}{
+						"replicas": 2,
 					},
 				},
 			},
-			expected: &workv1alpha1.Work{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "work.karmada.io/v1alpha1",
-					Kind:       "Work",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "demo-work-1",
-					Namespace: "cluster1-ns",
-					Annotations: map[string]string{
-						workv1alpha2.ManagedLabels: "foo",
+			expected: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"apiVersion": "apps/v1",
+					"kind":       "Deployment",
+					"metadata": map[string]interface{}{
+						"name": "demo-deployment-1",
+						"annotations": map[string]interface{}{
+							workv1alpha2.ManagedLabels: "foo",
+						},
+						"labels": map[string]interface{}{
+							"foo": "foo",
+						},
 					},
-					Labels: map[string]string{
-						"foo": "bar",
+					"spec": map[string]interface{}{
+						"replicas": 2,
 					},
 				},
 			},

@@ -34,7 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog/v2"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	clusterv1alpha1 "github.com/karmada-io/karmada/pkg/apis/cluster/v1alpha1"
@@ -116,7 +116,7 @@ var _ = ginkgo.Describe("propagation with label and group constraints testing", 
 			ginkgo.By("check if deployment present on right clusters", func() {
 				for _, targetClusterName := range targetClusterNames {
 					framework.WaitDeploymentPresentOnClusterFitWith(targetClusterName, deployment.Namespace, deployment.Name,
-						func(deployment *appsv1.Deployment) bool {
+						func(*appsv1.Deployment) bool {
 							return true
 						})
 					groupMatchedClusters = append(groupMatchedClusters, targetClusterName)
@@ -227,8 +227,8 @@ var _ = ginkgo.Describe("propagation with label and group constraints testing", 
 					gomega.Expect(clusterDynamicClient).ShouldNot(gomega.BeNil())
 
 					klog.Infof("Waiting for crd(%s) present on cluster(%s)", crd.Name, targetClusterName)
-					err := wait.PollImmediate(pollInterval, pollTimeout, func() (done bool, err error) {
-						_, err = clusterDynamicClient.Resource(crdGVR).Namespace(crd.Namespace).Get(context.TODO(), crd.Name, metav1.GetOptions{})
+					err := wait.PollUntilContextTimeout(context.TODO(), pollInterval, pollTimeout, true, func(ctx context.Context) (done bool, err error) {
+						_, err = clusterDynamicClient.Resource(crdGVR).Namespace(crd.Namespace).Get(ctx, crd.Name, metav1.GetOptions{})
 						if err != nil {
 							if apierrors.IsNotFound(err) {
 								return false, nil
@@ -330,7 +330,7 @@ var _ = ginkgo.Describe("propagation with label and group constraints testing", 
 			ginkgo.By("check if job present on right clusters", func() {
 				for _, targetClusterName := range targetClusterNames {
 					framework.WaitJobPresentOnClusterFitWith(targetClusterName, job.Namespace, job.Name,
-						func(job *batchv1.Job) bool {
+						func(*batchv1.Job) bool {
 							return true
 						})
 					groupMatchedClusters = append(groupMatchedClusters, targetClusterName)
@@ -339,7 +339,7 @@ var _ = ginkgo.Describe("propagation with label and group constraints testing", 
 				gomega.Expect(minGroups == len(groupMatchedClusters)).ShouldNot(gomega.BeFalse())
 			})
 
-			patch := map[string]interface{}{"spec": map[string]interface{}{"parallelism": pointer.Int32(updateParallelism)}}
+			patch := map[string]interface{}{"spec": map[string]interface{}{"parallelism": ptr.To[int32](updateParallelism)}}
 			bytes, err := json.Marshal(patch)
 			gomega.Expect(err).ShouldNot(gomega.HaveOccurred())
 			framework.UpdateJobWithPatchBytes(kubeClient, job.Namespace, job.Name, bytes, types.StrategicMergePatchType)
@@ -425,7 +425,7 @@ var _ = ginkgo.Describe("[ReplicaScheduling] ReplicaSchedulingStrategy testing",
 		ginkgo.It("replicas duplicated testing when rescheduling", func() {
 			klog.Infof("make sure deployment has been propagated to member clusters")
 			framework.WaitDeploymentPresentOnClustersFitWith(framework.ClusterNames(), deployment.Namespace, deployment.Name,
-				func(deployment *appsv1.Deployment) bool {
+				func(*appsv1.Deployment) bool {
 					return true
 				})
 
@@ -479,7 +479,7 @@ var _ = ginkgo.Describe("[ReplicaScheduling] ReplicaSchedulingStrategy testing",
 
 		ginkgo.It("replicas divided and weighted testing when rescheduling", func() {
 			framework.WaitDeploymentPresentOnClustersFitWith(framework.ClusterNames(), deployment.Namespace, deployment.Name,
-				func(deployment *appsv1.Deployment) bool {
+				func(*appsv1.Deployment) bool {
 					return true
 				})
 
@@ -579,7 +579,7 @@ var _ = ginkgo.Describe("[ReplicaScheduling] ReplicaSchedulingStrategy testing",
 
 		ginkgo.It("replicas divided and weighted testing when rescheduling", func() {
 			framework.WaitDeploymentPresentOnClustersFitWith(framework.ClusterNames(), deployment.Namespace, deployment.Name,
-				func(deployment *appsv1.Deployment) bool {
+				func(*appsv1.Deployment) bool {
 					return true
 				})
 

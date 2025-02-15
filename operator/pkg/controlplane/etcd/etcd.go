@@ -62,14 +62,15 @@ func installKarmadaEtcd(client clientset.Interface, name, namespace string, cfg 
 	}
 
 	etcdStatefulSetBytes, err := util.ParseTemplate(KarmadaEtcdStatefulSet, struct {
-		StatefulSetName, Namespace, Image, EtcdClientService string
-		CertsSecretName, EtcdPeerServiceName                 string
-		InitialCluster, EtcdDataVolumeName, EtcdCipherSuites string
-		Replicas, EtcdListenClientPort, EtcdListenPeerPort   int32
+		StatefulSetName, Namespace, Image, ImagePullPolicy, EtcdClientService string
+		CertsSecretName, EtcdPeerServiceName                                  string
+		InitialCluster, EtcdDataVolumeName, EtcdCipherSuites                  string
+		Replicas, EtcdListenClientPort, EtcdListenPeerPort                    int32
 	}{
 		StatefulSetName:      util.KarmadaEtcdName(name),
 		Namespace:            namespace,
 		Image:                cfg.Image.Name(),
+		ImagePullPolicy:      string(cfg.ImagePullPolicy),
 		EtcdClientService:    util.KarmadaEtcdClientName(name),
 		CertsSecretName:      util.EtcdCertSecretName(name),
 		EtcdPeerServiceName:  util.KarmadaEtcdName(name),
@@ -90,6 +91,7 @@ func installKarmadaEtcd(client clientset.Interface, name, namespace string, cfg 
 	}
 
 	patcher.NewPatcher().WithAnnotations(cfg.Annotations).WithLabels(cfg.Labels).
+		WithPriorityClassName(cfg.CommonSettings.PriorityClassName).
 		WithVolumeData(cfg.VolumeData).WithResources(cfg.Resources).ForStatefulSet(etcdStatefulSet)
 
 	if err := apiclient.CreateOrUpdateStatefulSet(client, etcdStatefulSet); err != nil {

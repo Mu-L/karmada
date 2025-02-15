@@ -18,6 +18,7 @@ package proxy
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -26,10 +27,12 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apiserver/pkg/endpoints/handlers/responsewriters"
 	"k8s.io/apiserver/pkg/endpoints/metrics"
 	"k8s.io/apiserver/pkg/endpoints/request"
 	"k8s.io/apiserver/pkg/registry/rest"
+	genericapiserver "k8s.io/apiserver/pkg/server"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -47,7 +50,9 @@ import (
 	pluginruntime "github.com/karmada-io/karmada/pkg/search/proxy/framework/runtime"
 	"github.com/karmada-io/karmada/pkg/search/proxy/store"
 	"github.com/karmada-io/karmada/pkg/util"
+	"github.com/karmada-io/karmada/pkg/util/helper"
 	"github.com/karmada-io/karmada/pkg/util/lifted"
+	"github.com/karmada-io/karmada/pkg/util/names"
 	"github.com/karmada-io/karmada/pkg/util/restmapper"
 )
 
@@ -65,6 +70,8 @@ type Controller struct {
 	store          store.Store
 
 	proxy framework.Proxy
+
+	storageInitializationTimeout time.Duration
 }
 
 // NewControllerOption is the Option for NewController().
@@ -76,6 +83,9 @@ type NewControllerOption struct {
 	KarmadaFactory informerfactory.SharedInformerFactory
 
 	MinRequestTimeout time.Duration
+	// StorageInitializationTimeout defines the maximum amount of time to wait for storage initialization
+	// before declaring apiserver ready.
+	StorageInitializationTimeout time.Duration
 
 	OutOfTreeRegistry pluginruntime.Registry
 }
@@ -96,13 +106,14 @@ func NewController(option NewControllerOption) (*Controller, error) {
 	proxy := pluginruntime.NewFramework(allPlugins)
 
 	ctl := &Controller{
-		restMapper:           option.RestMapper,
-		negotiatedSerializer: scheme.Codecs.WithoutConversion(),
-		secretLister:         secretLister,
-		clusterLister:        clusterLister,
-		registryLister:       option.KarmadaFactory.Search().V1alpha1().ResourceRegistries().Lister(),
-		store:                multiClusterStore,
-		proxy:                proxy,
+		restMapper:                   option.RestMapper,
+		negotiatedSerializer:         scheme.Codecs.WithoutConversion(),
+		secretLister:                 secretLister,
+		clusterLister:                clusterLister,
+		registryLister:               option.KarmadaFactory.Search().V1alpha1().ResourceRegistries().Lister(),
+		store:                        multiClusterStore,
+		storageInitializationTimeout: option.StorageInitializationTimeout,
+		proxy:                        proxy,
 	}
 
 	workerOptions := util.Options{
@@ -185,7 +196,7 @@ func (ctl *Controller) reconcile(util.QueueKey) error {
 	if err != nil {
 		return err
 	}
-
+	registeredResources := make(map[schema.GroupVersionResource]struct{})
 	resourcesByClusters := make(map[string]map[schema.GroupVersionResource]*store.MultiNamespace)
 	for _, registry := range registries {
 		matchedResources := make(map[schema.GroupVersionResource]*store.MultiNamespace, len(registry.Spec.ResourceSelectors))
@@ -202,8 +213,8 @@ func (ctl *Controller) reconcile(util.QueueKey) error {
 				matchedResources[gvr] = nsSelector
 			}
 			nsSelector.Add(selector.Namespace)
+			registeredResources[gvr] = struct{}{}
 		}
-
 		if len(matchedResources) == 0 {
 			continue
 		}
@@ -217,18 +228,34 @@ func (ctl *Controller) reconcile(util.QueueKey) error {
 				klog.Warningf("cluster %s is notReady", cluster.Name)
 				continue
 			}
-
-			if _, exist := resourcesByClusters[cluster.Name]; !exist {
-				resourcesByClusters[cluster.Name] = make(map[schema.GroupVersionResource]*store.MultiNamespace)
-			}
-
-			for resource, multiNS := range matchedResources {
-				resourcesByClusters[cluster.Name][resource] = multiNS
-			}
+			ctl.mergeResourcesByClusters(resourcesByClusters, cluster, matchedResources)
 		}
 	}
 
-	return ctl.store.UpdateCache(resourcesByClusters)
+	return ctl.store.UpdateCache(resourcesByClusters, registeredResources)
+}
+
+func (ctl *Controller) mergeResourcesByClusters(resourcesByClusters map[string]map[schema.GroupVersionResource]*store.MultiNamespace, cluster *clusterv1alpha1.Cluster, matchedResources map[schema.GroupVersionResource]*store.MultiNamespace) {
+	if _, exist := resourcesByClusters[cluster.Name]; !exist {
+		resourcesByClusters[cluster.Name] = make(map[schema.GroupVersionResource]*store.MultiNamespace)
+	}
+
+	for resource, multiNS := range matchedResources {
+		gvk, err := ctl.restMapper.KindFor(resource)
+		if err != nil {
+			klog.Errorf("Failed to get gvk: %v", err)
+			continue
+		}
+		if !helper.IsAPIEnabled(cluster.Status.APIEnablements, gvk.GroupVersion().String(), gvk.Kind) {
+			klog.Warningf("Resource %s is not enabled for cluster %s", resource.String(), cluster)
+			continue
+		}
+		if ns, exist := resourcesByClusters[cluster.Name][resource]; !exist {
+			resourcesByClusters[cluster.Name][resource] = multiNS
+		} else {
+			resourcesByClusters[cluster.Name][resource] = ns.Merge(multiNS)
+		}
+	}
 }
 
 type errorHTTPHandler struct {
@@ -280,7 +307,7 @@ func (ctl *Controller) Connect(ctx context.Context, proxyPath string, responder 
 		}
 
 		h = metrics.InstrumentHandlerFunc(requestInfo.Verb, requestInfo.APIGroup, requestInfo.APIVersion, requestInfo.Resource, requestInfo.Subresource,
-			"", "karmada-search", false, "", h.ServeHTTP)
+			"", names.KarmadaSearchComponentName, false, "", h.ServeHTTP)
 		h.ServeHTTP(rw, newReq)
 	}), nil
 }
@@ -301,4 +328,30 @@ func dynamicClientForClusterFunc(clusterLister clusterlisters.ClusterLister,
 		}
 		return dynamic.NewForConfig(clusterConfig)
 	}
+}
+
+func (ctl *Controller) storageReadinessCheck() bool {
+	return ctl.store.ReadinessCheck() == nil
+}
+
+// Hook waits for the controller to be in a storage ready state.
+// Here, even if the initialization is not completed within the timeout interval,
+// nil is still returned because the cache is per-type and per-cluster layer,
+// and we want to avoid making the whole component as not ready, if the request for
+// one of the resource types requires reinitialization, requests for all other
+// resource types can still be handled properly.
+func (ctl *Controller) Hook(ctx genericapiserver.PostStartHookContext) error {
+	deadlineCtx, cancel := context.WithTimeout(ctx, ctl.storageInitializationTimeout)
+	defer cancel()
+	err := wait.PollUntilContextCancel(deadlineCtx, 100*time.Millisecond, true,
+		func(_ context.Context) (bool, error) {
+			if ok := ctl.storageReadinessCheck(); ok {
+				return true, nil
+			}
+			return false, nil
+		})
+	if errors.Is(err, context.DeadlineExceeded) {
+		klog.Warningf("Deadline exceeded while waiting for storage readiness... ignoring")
+	}
+	return nil
 }

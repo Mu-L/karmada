@@ -101,12 +101,12 @@ func runCrds(r workflow.RunData) error {
 		return errors.New("crds task invoked with an invalid data struct")
 	}
 
-	var (
-		crdsDir       = path.Join(data.DataDir(), data.KarmadaVersion())
-		crdsPath      = path.Join(crdsDir, "crds/bases")
-		crdsPatchPath = path.Join(crdsDir, "crds/patches")
-	)
-
+	crdsDir, err := getCrdsDir(data)
+	if err != nil {
+		return fmt.Errorf("failed to get CRD dir, err: %w", err)
+	}
+	crdsPath := path.Join(crdsDir, "crds/bases")
+	crdsPatchPath := path.Join(crdsDir, "crds/patches")
 	crdsClient, err := apiclient.NewCRDsClient(data.ControlplaneConfig())
 	if err != nil {
 		return err
@@ -122,7 +122,7 @@ func runCrds(r workflow.RunData) error {
 	}
 
 	caBase64 := base64.StdEncoding.EncodeToString(cert.CertData())
-	if err := patchCrds(crdsClient, crdsPatchPath, caBase64); err != nil {
+	if err := patchCrds(data, crdsClient, crdsPatchPath, caBase64); err != nil {
 		return fmt.Errorf("failed to patch karmada crds, err: %w", err)
 	}
 
@@ -149,14 +149,28 @@ func createCrds(crdsClient *crdsclient.Clientset, crdsPath string) error {
 	return nil
 }
 
-func patchCrds(crdsClient *crdsclient.Clientset, patchPath string, caBundle string) error {
+func patchCrds(data InitData, crdsClient *crdsclient.Clientset, patchPath string, caBundle string) error {
 	for _, file := range util.ListFileWithSuffix(patchPath, ".yaml") {
-		reg, err := regexp.Compile("{{caBundle}}")
+		caBundleReg, err := regexp.Compile("{{caBundle}}")
 		if err != nil {
 			return err
 		}
 
-		crdBytes, err := util.ReplaceYamlForReg(file.AbsPath, caBundle, reg)
+		nameReg, err := regexp.Compile("{{name}}")
+		if err != nil {
+			return err
+		}
+
+		namespaceReg, err := regexp.Compile("{{namespace}}")
+		if err != nil {
+			return err
+		}
+
+		crdBytes, err := util.ReplaceYamlForRegs(file.AbsPath, map[*regexp.Regexp]string{
+			caBundleReg:  caBundle,
+			nameReg:      util.KarmadaWebhookName(data.GetName()),
+			namespaceReg: data.GetNamespace(),
+		})
 		if err != nil {
 			return err
 		}

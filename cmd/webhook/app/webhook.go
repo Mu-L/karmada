@@ -39,10 +39,12 @@ import (
 	"github.com/karmada-io/karmada/pkg/sharedcli/klogflag"
 	"github.com/karmada-io/karmada/pkg/sharedcli/profileflag"
 	"github.com/karmada-io/karmada/pkg/util/gclient"
+	"github.com/karmada-io/karmada/pkg/util/names"
 	"github.com/karmada-io/karmada/pkg/version"
 	"github.com/karmada-io/karmada/pkg/version/sharedcommand"
 	"github.com/karmada-io/karmada/pkg/webhook/clusteroverridepolicy"
 	"github.com/karmada-io/karmada/pkg/webhook/clusterpropagationpolicy"
+	"github.com/karmada-io/karmada/pkg/webhook/clusterresourcebinding"
 	"github.com/karmada-io/karmada/pkg/webhook/configuration"
 	"github.com/karmada-io/karmada/pkg/webhook/cronfederatedhpa"
 	"github.com/karmada-io/karmada/pkg/webhook/federatedhpa"
@@ -51,6 +53,7 @@ import (
 	"github.com/karmada-io/karmada/pkg/webhook/multiclusterservice"
 	"github.com/karmada-io/karmada/pkg/webhook/overridepolicy"
 	"github.com/karmada-io/karmada/pkg/webhook/propagationpolicy"
+	"github.com/karmada-io/karmada/pkg/webhook/resourcebinding"
 	"github.com/karmada-io/karmada/pkg/webhook/resourcedeletionprotection"
 	"github.com/karmada-io/karmada/pkg/webhook/resourceinterpretercustomization"
 	"github.com/karmada-io/karmada/pkg/webhook/work"
@@ -61,10 +64,10 @@ func NewWebhookCommand(ctx context.Context) *cobra.Command {
 	opts := options.NewOptions()
 
 	cmd := &cobra.Command{
-		Use: "karmada-webhook",
+		Use: names.KarmadaWebhookComponentName,
 		Long: `The karmada-webhook starts a webhook server and manages policies about how to mutate and validate
 Karmada resources including 'PropagationPolicy', 'OverridePolicy' and so on.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			// validate options
 			if errs := opts.Validate(); len(errs) != 0 {
 				return errs.ToAggregate()
@@ -94,7 +97,7 @@ Karmada resources including 'PropagationPolicy', 'OverridePolicy' and so on.`,
 	logsFlagSet := fss.FlagSet("logs")
 	klogflag.Add(logsFlagSet)
 
-	cmd.AddCommand(sharedcommand.NewCmdVersion("karmada-webhook"))
+	cmd.AddCommand(sharedcommand.NewCmdVersion(names.KarmadaWebhookComponentName))
 	cmd.Flags().AddFlagSet(genericFlagSet)
 	cmd.Flags().AddFlagSet(logsFlagSet)
 
@@ -176,6 +179,8 @@ func Run(ctx context.Context, opts *options.Options) error {
 	hookServer.Register("/mutate-multiclusterservice", &webhook.Admission{Handler: &multiclusterservice.MutatingAdmission{Decoder: decoder}})
 	hookServer.Register("/mutate-federatedhpa", &webhook.Admission{Handler: &federatedhpa.MutatingAdmission{Decoder: decoder}})
 	hookServer.Register("/validate-resourcedeletionprotection", &webhook.Admission{Handler: &resourcedeletionprotection.ValidatingAdmission{Decoder: decoder}})
+	hookServer.Register("/mutate-resourcebinding", &webhook.Admission{Handler: &resourcebinding.MutatingAdmission{Decoder: decoder}})
+	hookServer.Register("/mutate-clusterresourcebinding", &webhook.Admission{Handler: &clusterresourcebinding.MutatingAdmission{Decoder: decoder}})
 	hookServer.WebhookMux().Handle("/readyz/", http.StripPrefix("/readyz/", &healthz.Handler{}))
 
 	// blocks until the context is done.

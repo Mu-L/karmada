@@ -35,6 +35,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	clusterv1alpha1 "github.com/karmada-io/karmada/pkg/apis/cluster/v1alpha1"
 	policyv1alpha1 "github.com/karmada-io/karmada/pkg/apis/policy/v1alpha1"
@@ -46,6 +47,7 @@ import (
 	"github.com/karmada-io/karmada/pkg/util/fedinformer"
 	"github.com/karmada-io/karmada/pkg/util/fedinformer/genericmanager"
 	"github.com/karmada-io/karmada/pkg/util/gclient"
+	"github.com/karmada-io/karmada/pkg/util/helper"
 	"github.com/karmada-io/karmada/pkg/util/restmapper"
 )
 
@@ -66,7 +68,7 @@ type Controller struct {
 	restMapper      meta.RESTMapper
 	informerFactory informerfactory.SharedInformerFactory
 	clusterLister   clusterlister.ClusterLister
-	queue           workqueue.RateLimitingInterface
+	queue           workqueue.TypedRateLimitingInterface[any]
 
 	clusterRegistry sync.Map
 
@@ -76,7 +78,7 @@ type Controller struct {
 // NewController returns a new ResourceRegistry controller
 func NewController(restConfig *rest.Config, factory informerfactory.SharedInformerFactory, restMapper meta.RESTMapper) (*Controller, error) {
 	clusterLister := factory.Cluster().V1alpha1().Clusters().Lister()
-	queue := workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
+	queue := workqueue.NewTypedRateLimitingQueue[any](workqueue.DefaultTypedControllerRateLimiter[any]())
 
 	c := &Controller{
 		restConfig:      restConfig,
@@ -348,6 +350,10 @@ func (c *Controller) getRegistryBackendHandler(cluster string, matchedRegistries
 	return handler, nil
 }
 
+var clusterDynamicClientBuilder = func(cluster string, controlPlaneClient client.Client) (*util.DynamicClusterClient, error) {
+	return util.NewClusterDynamicClientSet(cluster, controlPlaneClient)
+}
+
 // doCacheCluster processes the resourceRegistry object
 // TODO: update status
 func (c *Controller) doCacheCluster(cluster string) error {
@@ -387,7 +393,7 @@ func (c *Controller) doCacheCluster(cluster string) error {
 		klog.Info("Try to build informer manager for cluster ", cluster)
 		controlPlaneClient := gclient.NewForConfigOrDie(c.restConfig)
 
-		clusterDynamicClient, err := util.NewClusterDynamicClientSet(cluster, controlPlaneClient)
+		clusterDynamicClient, err := clusterDynamicClientBuilder(cluster, controlPlaneClient)
 		if err != nil {
 			return err
 		}
@@ -401,10 +407,18 @@ func (c *Controller) doCacheCluster(cluster string) error {
 
 	sci := c.InformerManager.GetSingleClusterManager(cluster)
 	for gvr := range cr.resources {
+		gvk, err := c.restMapper.KindFor(gvr)
+		if err != nil {
+			klog.Errorf("Failed to get gvk: %v", err)
+			continue
+		}
+		if !helper.IsAPIEnabled(cls.Status.APIEnablements, gvk.GroupVersion().String(), gvk.Kind) {
+			klog.Warningf("Resource %s is not enabled for cluster %s", gvr.String(), cluster)
+			continue
+		}
 		klog.Infof("Add informer for %s, %v", cluster, gvr)
 		sci.ForResource(gvr, handler)
 	}
-
 	klog.Infof("Start informer for %s", cluster)
 	sci.Start()
 	_ = sci.WaitForCacheSync()
@@ -486,7 +500,8 @@ func (c *Controller) updateCluster(oldObj, curObj interface{}) {
 		c.queue.Add(curCluster.GetName())
 	}
 
-	if !reflect.DeepEqual(curCluster.Spec, oldCluster.Spec) || !reflect.DeepEqual(curCluster.Labels, oldCluster.Labels) {
+	if !reflect.DeepEqual(curCluster.Spec, oldCluster.Spec) || !reflect.DeepEqual(curCluster.Labels, oldCluster.Labels) ||
+		!reflect.DeepEqual(curCluster.Status.APIEnablements, oldCluster.Status.APIEnablements) {
 		c.queue.Add(curCluster.GetName())
 	}
 }

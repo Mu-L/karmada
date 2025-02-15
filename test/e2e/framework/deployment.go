@@ -82,6 +82,17 @@ func WaitDeploymentPresentOnClusterFitWith(cluster, namespace, name string, fit 
 	}, pollTimeout, pollInterval).Should(gomega.Equal(true))
 }
 
+// WaitDeploymentFitWith wait deployment sync with fit func.
+func WaitDeploymentFitWith(client kubernetes.Interface, namespace, name string, fit func(deployment *appsv1.Deployment) bool) {
+	gomega.Eventually(func() bool {
+		dep, err := client.AppsV1().Deployments(namespace).Get(context.TODO(), name, metav1.GetOptions{})
+		if err != nil {
+			return false
+		}
+		return fit(dep)
+	}, pollTimeout, pollInterval).Should(gomega.Equal(true))
+}
+
 // WaitDeploymentPresentOnClustersFitWith wait deployment present on cluster sync with fit func.
 func WaitDeploymentPresentOnClustersFitWith(clusters []string, namespace, name string, fit func(deployment *appsv1.Deployment) bool) {
 	ginkgo.By(fmt.Sprintf("Waiting for deployment(%s/%s) synced on member clusters", namespace, name), func() {
@@ -157,6 +168,26 @@ func UpdateDeploymentAnnotations(client kubernetes.Interface, deployment *appsv1
 				return err
 			}
 			deploy.Annotations = annotations
+			_, err = client.AppsV1().Deployments(deploy.Namespace).Update(context.TODO(), deploy, metav1.UpdateOptions{})
+			return err
+		}, pollTimeout, pollInterval).ShouldNot(gomega.HaveOccurred())
+	})
+}
+
+// AppendDeploymentAnnotations append deployment's annotations.
+func AppendDeploymentAnnotations(client kubernetes.Interface, deployment *appsv1.Deployment, annotations map[string]string) {
+	ginkgo.By(fmt.Sprintf("Appending Deployment(%s/%s)'s annotations to %v", deployment.Namespace, deployment.Name, annotations), func() {
+		gomega.Eventually(func() error {
+			deploy, err := client.AppsV1().Deployments(deployment.Namespace).Get(context.TODO(), deployment.Name, metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			if deploy.Annotations == nil {
+				deploy.Annotations = make(map[string]string, 0)
+			}
+			for k, v := range annotations {
+				deploy.Annotations[k] = v
+			}
 			_, err = client.AppsV1().Deployments(deploy.Namespace).Update(context.TODO(), deploy, metav1.UpdateOptions{})
 			return err
 		}, pollTimeout, pollInterval).ShouldNot(gomega.HaveOccurred())

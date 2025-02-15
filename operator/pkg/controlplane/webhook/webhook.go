@@ -42,15 +42,16 @@ func EnsureKarmadaWebhook(client clientset.Interface, cfg *operatorv1alpha1.Karm
 
 func installKarmadaWebhook(client clientset.Interface, cfg *operatorv1alpha1.KarmadaWebhook, name, namespace string, _ map[string]bool) error {
 	webhookDeploymentSetBytes, err := util.ParseTemplate(KarmadaWebhookDeployment, struct {
-		DeploymentName, Namespace, Image     string
-		KubeconfigSecret, WebhookCertsSecret string
-		Replicas                             *int32
+		DeploymentName, Namespace, Image, ImagePullPolicy string
+		KubeconfigSecret, WebhookCertsSecret              string
+		Replicas                                          *int32
 	}{
 		DeploymentName:     util.KarmadaWebhookName(name),
 		Namespace:          namespace,
 		Image:              cfg.Image.Name(),
+		ImagePullPolicy:    string(cfg.ImagePullPolicy),
 		Replicas:           cfg.Replicas,
-		KubeconfigSecret:   util.AdminKubeconfigSecretName(name),
+		KubeconfigSecret:   util.ComponentKarmadaConfigSecretName(util.KarmadaWebhookName(name)),
 		WebhookCertsSecret: util.WebhookCertSecretName(name),
 	})
 	if err != nil {
@@ -63,6 +64,7 @@ func installKarmadaWebhook(client clientset.Interface, cfg *operatorv1alpha1.Kar
 	}
 
 	patcher.NewPatcher().WithAnnotations(cfg.Annotations).WithLabels(cfg.Labels).
+		WithPriorityClassName(cfg.CommonSettings.PriorityClassName).
 		WithExtraArgs(cfg.ExtraArgs).WithResources(cfg.Resources).ForDeployment(webhookDeployment)
 
 	if err := apiclient.CreateOrUpdateDeployment(client, webhookDeployment); err != nil {

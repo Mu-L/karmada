@@ -22,7 +22,7 @@ import (
 	"time"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	workv1alpha2 "github.com/karmada-io/karmada/pkg/apis/work/v1alpha2"
 )
@@ -143,7 +143,7 @@ func Test_assessSingleTask(t *testing.T) {
 			args: args{
 				task: workv1alpha2.GracefulEvictionTask{
 					FromCluster:        "member1",
-					GracePeriodSeconds: pointer.Int32(30),
+					GracePeriodSeconds: ptr.To[int32](30),
 					CreationTimestamp:  &metav1.Time{Time: timeNow.Add(time.Minute * -1)},
 				},
 				opt: assessmentOption{
@@ -163,7 +163,7 @@ func Test_assessSingleTask(t *testing.T) {
 			args: args{
 				task: workv1alpha2.GracefulEvictionTask{
 					FromCluster:        "member1",
-					GracePeriodSeconds: pointer.Int32(120),
+					GracePeriodSeconds: ptr.To[int32](120),
 					CreationTimestamp:  &metav1.Time{Time: timeNow.Add(time.Minute * -1)},
 				},
 				opt: assessmentOption{
@@ -178,7 +178,7 @@ func Test_assessSingleTask(t *testing.T) {
 			},
 			want: &workv1alpha2.GracefulEvictionTask{
 				FromCluster:        "member1",
-				GracePeriodSeconds: pointer.Int32(120),
+				GracePeriodSeconds: ptr.To[int32](120),
 				CreationTimestamp:  &metav1.Time{Time: timeNow.Add(time.Minute * -1)},
 			},
 		},
@@ -187,7 +187,7 @@ func Test_assessSingleTask(t *testing.T) {
 			args: args{
 				task: workv1alpha2.GracefulEvictionTask{
 					FromCluster:       "member1",
-					SuppressDeletion:  pointer.Bool(true),
+					SuppressDeletion:  ptr.To[bool](true),
 					CreationTimestamp: &metav1.Time{Time: timeNow.Add(time.Minute * -1)},
 				},
 				opt: assessmentOption{
@@ -202,7 +202,7 @@ func Test_assessSingleTask(t *testing.T) {
 			},
 			want: &workv1alpha2.GracefulEvictionTask{
 				FromCluster:       "member1",
-				SuppressDeletion:  pointer.Bool(true),
+				SuppressDeletion:  ptr.To[bool](true),
 				CreationTimestamp: &metav1.Time{Time: timeNow.Add(time.Minute * -1)},
 			},
 		},
@@ -211,7 +211,7 @@ func Test_assessSingleTask(t *testing.T) {
 			args: args{
 				task: workv1alpha2.GracefulEvictionTask{
 					FromCluster:       "member1",
-					SuppressDeletion:  pointer.Bool(false),
+					SuppressDeletion:  ptr.To[bool](false),
 					CreationTimestamp: &metav1.Time{Time: timeNow.Add(time.Minute * -1)},
 				},
 				opt: assessmentOption{
@@ -594,7 +594,7 @@ func Test_nextRetry(t *testing.T) {
 					{
 						FromCluster:       "member1",
 						CreationTimestamp: &metav1.Time{Time: timeNow.Add(time.Minute * -60)},
-						SuppressDeletion:  pointer.Bool(true),
+						SuppressDeletion:  ptr.To[bool](true),
 					},
 					{
 						FromCluster:       "member2",
@@ -613,18 +613,33 @@ func Test_nextRetry(t *testing.T) {
 					{
 						FromCluster:       "member1",
 						CreationTimestamp: &metav1.Time{Time: timeNow.Add(time.Minute * -60)},
-						SuppressDeletion:  pointer.Bool(true),
+						SuppressDeletion:  ptr.To[bool](true),
 					},
 					{
 						FromCluster:       "member2",
 						CreationTimestamp: &metav1.Time{Time: timeNow.Add(time.Minute * -5)},
-						SuppressDeletion:  pointer.Bool(true),
+						SuppressDeletion:  ptr.To[bool](true),
 					},
 				},
 				timeout: timeout,
 				timeNow: timeNow.Time,
 			},
 			want: 0,
+		},
+		{
+			name: "task with custom grace period - not expired",
+			args: args{
+				task: []workv1alpha2.GracefulEvictionTask{
+					{
+						FromCluster:        "member1",
+						CreationTimestamp:  &metav1.Time{Time: timeNow.Add(time.Minute * -5)},
+						GracePeriodSeconds: ptr.To[int32](600),
+					},
+				},
+				timeout: timeout,
+				timeNow: timeNow.Time,
+			},
+			want: time.Minute * 5, // 10 minutes (grace period) - 5 minutes (elapsed time)
 		},
 	}
 	for _, tt := range tests {

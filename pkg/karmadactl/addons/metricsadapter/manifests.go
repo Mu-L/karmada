@@ -43,19 +43,15 @@ spec:
         - name: karmada-metrics-adapter
           image: {{ .Image }}
           imagePullPolicy: IfNotPresent
-          volumeMounts:
-            - name: k8s-certs
-              mountPath: /etc/karmada/pki
-              readOnly: true
-            - name: kubeconfig
-              subPath: kubeconfig
-              mountPath: /etc/kubeconfig
           command:
             - /bin/karmada-metrics-adapter
-            - --kubeconfig=/etc/kubeconfig
-            - --authentication-kubeconfig=/etc/kubeconfig
-            - --authorization-kubeconfig=/etc/kubeconfig
+            - --metrics-bind-address=:8080
+            - --kubeconfig=/etc/karmada/config/karmada.config
+            - --authentication-kubeconfig=/etc/karmada/config/karmada.config
+            - --authorization-kubeconfig=/etc/karmada/config/karmada.config
             - --client-ca-file=/etc/karmada/pki/ca.crt
+            - --tls-cert-file=/etc/karmada/pki/karmada.crt
+            - --tls-private-key-file=/etc/karmada/pki/karmada.key
             - --audit-log-path=-
             - --audit-log-maxage=0
             - --audit-log-maxbackup=0
@@ -81,13 +77,19 @@ spec:
           resources:
             requests:
               cpu: 100m
+          volumeMounts:
+            - name: karmada-config
+              mountPath: /etc/karmada/config
+            - name: k8s-certs
+              mountPath: /etc/karmada/pki
+              readOnly: true
       volumes:
+        - name: karmada-config
+          secret:
+            secretName: karmada-metrics-adapter-config
         - name: k8s-certs
           secret:
             secretName: karmada-cert
-        - name: kubeconfig
-          secret:
-            secretName: kubeconfig
 `
 
 	karmadaMetricsAdapterService = `

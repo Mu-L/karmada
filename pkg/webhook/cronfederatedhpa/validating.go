@@ -1,9 +1,12 @@
 /*
 Copyright 2023 The Karmada Authors.
+
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
+
     http://www.apache.org/licenses/LICENSE-2.0
+
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,7 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/klog/v2"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	autoscalingv1alpha1 "github.com/karmada-io/karmada/pkg/apis/autoscaling/v1alpha1"
@@ -35,7 +38,7 @@ import (
 
 // ValidatingAdmission validates CronFederatedHPA object when creating/updating.
 type ValidatingAdmission struct {
-	Decoder *admission.Decoder
+	Decoder admission.Decoder
 }
 
 // Check if our ValidatingAdmission implements necessary interface
@@ -128,15 +131,15 @@ func validateCronFederatedHPAScalingReplicas(rule autoscalingv1alpha1.CronFedera
 			errs = append(errs, field.Invalid(fldPath.Child("targetMaxReplicas"), "",
 				"targetMinReplicas and targetMaxReplicas cannot be nil at the same time if you want to scale FederatedHPA"))
 		}
-		if pointer.Int32Deref(rule.TargetMinReplicas, 1) <= 0 {
+		if ptr.Deref(rule.TargetMinReplicas, 1) <= 0 {
 			errs = append(errs, field.Invalid(fldPath.Child("targetMinReplicas"), "",
 				"targetMinReplicas should be larger than 0"))
 		}
-		if pointer.Int32Deref(rule.TargetMaxReplicas, math.MaxInt32) <= 0 {
+		if ptr.Deref(rule.TargetMaxReplicas, math.MaxInt32) <= 0 {
 			errs = append(errs, field.Invalid(fldPath.Child("targetMaxReplicas"), "",
 				"targetMaxReplicas should be larger than 0"))
 		}
-		if pointer.Int32Deref(rule.TargetMinReplicas, 1) > pointer.Int32Deref(rule.TargetMaxReplicas, math.MaxInt32) {
+		if ptr.Deref(rule.TargetMinReplicas, 1) > ptr.Deref(rule.TargetMaxReplicas, math.MaxInt32) {
 			errs = append(errs, field.Invalid(fldPath.Child("targetMinReplicas"), "",
 				"targetMaxReplicas should be larger than or equal to targetMinReplicas"))
 		}
@@ -149,7 +152,7 @@ func validateCronFederatedHPAScalingReplicas(rule autoscalingv1alpha1.CronFedera
 		errs = append(errs, field.Invalid(fldPath.Child("targetReplicas"), "", errMsg))
 	}
 	// It's allowed to scale to 0, such as remove all the replicas when weekends
-	if pointer.Int32Deref(rule.TargetReplicas, 0) < 0 {
+	if ptr.Deref(rule.TargetReplicas, 0) < 0 {
 		errs = append(errs, field.Invalid(fldPath.Child("targetReplicas"), "",
 			"targetReplicas should be larger than or equal to 0"))
 	}

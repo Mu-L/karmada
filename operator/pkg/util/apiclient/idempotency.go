@@ -49,7 +49,7 @@ func NewCRDsClient(c *rest.Config) (*crdsclient.Clientset, error) {
 }
 
 // NewAPIRegistrationClient is to create an apiregistration ClientSet
-func NewAPIRegistrationClient(c *rest.Config) (*aggregator.Clientset, error) {
+func NewAPIRegistrationClient(c *rest.Config) (aggregator.Interface, error) {
 	return aggregator.NewForConfig(c)
 }
 
@@ -107,6 +107,8 @@ func CreateOrUpdateService(client clientset.Interface, service *corev1.Service) 
 		}
 
 		service.ResourceVersion = older.ResourceVersion
+		service.Spec.ClusterIP = older.Spec.ClusterIP
+		service.Spec.ClusterIPs = older.Spec.ClusterIPs
 		if _, err := client.CoreV1().Services(service.GetNamespace()).Update(context.TODO(), service, metav1.UpdateOptions{}); err != nil {
 			return fmt.Errorf("unable to update Service: %v", err)
 		}
@@ -181,7 +183,7 @@ func CreateOrUpdateValidatingWebhookConfiguration(client clientset.Interface, vw
 }
 
 // CreateOrUpdateAPIService creates a APIService if the target resource doesn't exist. If the resource exists already, this function will update the resource instead.
-func CreateOrUpdateAPIService(apiRegistrationClient *aggregator.Clientset, apiservice *apiregistrationv1.APIService) error {
+func CreateOrUpdateAPIService(apiRegistrationClient aggregator.Interface, apiservice *apiregistrationv1.APIService) error {
 	_, err := apiRegistrationClient.ApiregistrationV1().APIServices().Create(context.TODO(), apiservice, metav1.CreateOptions{})
 	if err != nil {
 		if !apierrors.IsAlreadyExists(err) {
@@ -199,7 +201,7 @@ func CreateOrUpdateAPIService(apiRegistrationClient *aggregator.Clientset, apise
 		}
 	}
 
-	klog.V(5).Infof("Successfully created or updated APIService", "APIService", apiservice.Name)
+	klog.V(5).InfoS("Successfully created or updated APIService", "APIService", apiservice.Name)
 	return nil
 }
 
@@ -250,7 +252,7 @@ func CreateOrUpdateStatefulSet(client clientset.Interface, statefulSet *appsv1.S
 		}
 	}
 
-	klog.V(5).InfoS("Successfully created or updated statefulset", "statefulset", statefulSet.GetName)
+	klog.V(5).InfoS("Successfully created or updated statefulset", "statefulset", statefulSet.GetName())
 	return nil
 }
 
@@ -275,7 +277,33 @@ func CreateOrUpdateClusterRole(client clientset.Interface, clusterrole *rbacv1.C
 		}
 	}
 
-	klog.V(4).InfoS("Successfully created or updated clusterrole", "clusterrole", clusterrole.GetName)
+	klog.V(4).InfoS("Successfully created or updated clusterrole", "clusterrole", clusterrole.GetName())
+	return nil
+}
+
+// CreateOrUpdateClusterRoleBinding creates a Clusterrolebinding if the target resource doesn't exist.
+// If the resource exists already, this function will update the resource instead.
+func CreateOrUpdateClusterRoleBinding(client clientset.Interface, clusterrolebinding *rbacv1.ClusterRoleBinding) error {
+	_, err := client.RbacV1().ClusterRoleBindings().Create(context.TODO(), clusterrolebinding, metav1.CreateOptions{})
+
+	if err != nil {
+		if !apierrors.IsAlreadyExists(err) {
+			return err
+		}
+
+		older, err := client.RbacV1().ClusterRoleBindings().Get(context.TODO(), clusterrolebinding.GetName(), metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+
+		clusterrolebinding.ResourceVersion = older.ResourceVersion
+		_, err = client.RbacV1().ClusterRoleBindings().Update(context.TODO(), clusterrolebinding, metav1.UpdateOptions{})
+		if err != nil {
+			return err
+		}
+	}
+
+	klog.V(4).InfoS("Successfully created or updated clusterrolebinding", "clusterrolebinding", clusterrolebinding.GetName())
 	return nil
 }
 

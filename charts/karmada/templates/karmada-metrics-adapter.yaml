@@ -30,6 +30,8 @@ spec:
     spec:
       {{- include "karmada.metricsAdapter.imagePullSecrets" . | nindent 6 }}
       automountServiceAccountToken: false
+      initContainers:
+        {{- include "karmada.initContainer.waitStaticResource" . | nindent 8 }}
       containers:
         - name: {{ $name }}-aggregated-apiserver
           image: {{ template "karmada.metricsAdapter.image" . }}
@@ -42,6 +44,7 @@ spec:
           command:
             - /bin/karmada-metrics-adapter
             - --kubeconfig=/etc/kubeconfig
+            - --metrics-bind-address=:8080
             - --authentication-kubeconfig=/etc/kubeconfig
             - --authorization-kubeconfig=/etc/kubeconfig
             - --tls-cert-file=/etc/kubernetes/pki/karmada.crt
@@ -80,6 +83,7 @@ spec:
       tolerations:
       {{- toYaml . | nindent 8 }}
       {{- end }}
+      priorityClassName: {{ .Values.metricsAdapter.priorityClassName }}
       volumes:
         {{- include "karmada.kubeconfig.volume" . | nindent 8 }}
         - name: apiserver-cert

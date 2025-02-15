@@ -284,6 +284,20 @@ type MultiNamespace struct {
 	namespaces    sets.Set[string]
 }
 
+// Merge merges multiNS into n.
+func (n *MultiNamespace) Merge(multiNS *MultiNamespace) *MultiNamespace {
+	if n.allNamespaces || multiNS.allNamespaces {
+		n.allNamespaces = true
+		n.namespaces = nil
+		return n
+	}
+	if n.Equal(multiNS) {
+		return n
+	}
+	n.namespaces.Insert(multiNS.namespaces.Clone().UnsortedList()...)
+	return n
+}
+
 // NewMultiNamespace return a new empty MultiNamespace.
 func NewMultiNamespace() *MultiNamespace {
 	return &MultiNamespace{
@@ -315,9 +329,9 @@ func (n *MultiNamespace) Single() (string, bool) {
 	if n.allNamespaces || n.namespaces.Len() != 1 {
 		return "", false
 	}
-	var ns string
-	for ns = range n.namespaces {
-	}
+
+	// reach here means there is exactly one namespace, so we can safely get it.
+	ns := sets.List(n.namespaces)[0]
 	return ns, true
 }
 

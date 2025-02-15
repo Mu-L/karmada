@@ -20,9 +20,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"net"
 	"os"
-	"strconv"
 
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -59,7 +57,7 @@ func NewOperatorCommand(ctx context.Context) *cobra.Command {
 			restclient.SetDefaultWarningHandler(restclient.NoWarnings{})
 			return nil
 		},
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			if err := o.Validate(); err != nil {
 				return err
 			}
@@ -174,7 +172,7 @@ func createControllerManager(ctx context.Context, o *options.Options) (controlle
 		RenewDeadline:              &o.LeaderElection.RenewDeadline.Duration,
 		RetryPeriod:                &o.LeaderElection.RetryPeriod.Duration,
 		LeaderElectionResourceLock: o.LeaderElection.ResourceLock,
-		HealthProbeBindAddress:     net.JoinHostPort(o.BindAddress, strconv.Itoa(o.SecurePort)),
+		HealthProbeBindAddress:     o.HealthProbeBindAddress,
 		LivenessEndpointName:       "/healthz",
 		Metrics:                    metricsserver.Options{BindAddress: o.MetricsBindAddress},
 		Controller: config.Controller{

@@ -41,6 +41,7 @@ import (
 	workv1alpha1 "github.com/karmada-io/karmada/pkg/apis/work/v1alpha1"
 	workv1alpha2 "github.com/karmada-io/karmada/pkg/apis/work/v1alpha2"
 	"github.com/karmada-io/karmada/pkg/events"
+	"github.com/karmada-io/karmada/pkg/features"
 	"github.com/karmada-io/karmada/pkg/util"
 	"github.com/karmada-io/karmada/pkg/util/fedinformer/genericmanager"
 	"github.com/karmada-io/karmada/pkg/util/fedinformer/keys"
@@ -185,7 +186,11 @@ func ObtainBindingSpecExistingClusters(bindingSpec workv1alpha2.ResourceBindingS
 	}
 
 	for _, task := range bindingSpec.GracefulEvictionTasks {
-		clusterNames.Insert(task.FromCluster)
+		// EvictionTasks with Immediately PurgeMode should not be treated as existing clusters
+		// Work on those clusters should be removed immediately and treated as orphans
+		if task.PurgeMode != policyv1alpha1.Immediately {
+			clusterNames.Insert(task.FromCluster)
+		}
 	}
 
 	return clusterNames
@@ -193,9 +198,9 @@ func ObtainBindingSpecExistingClusters(bindingSpec workv1alpha2.ResourceBindingS
 
 // FindOrphanWorks retrieves all works that labeled with current binding(ResourceBinding or ClusterResourceBinding) objects,
 // then pick the works that not meet current binding declaration.
-func FindOrphanWorks(c client.Client, bindingNamespace, bindingName string, expectClusters sets.Set[string]) ([]workv1alpha1.Work, error) {
+func FindOrphanWorks(ctx context.Context, c client.Client, bindingNamespace, bindingName, bindingID string, expectClusters sets.Set[string]) ([]workv1alpha1.Work, error) {
 	var needJudgeWorks []workv1alpha1.Work
-	workList, err := GetWorksByBindingNamespaceName(c, bindingNamespace, bindingName)
+	workList, err := GetWorksByBindingID(ctx, c, bindingID, bindingNamespace != "")
 	if err != nil {
 		klog.Errorf("Failed to get works by binding object (%s/%s): %v", bindingNamespace, bindingName, err)
 		return nil, err
@@ -218,10 +223,10 @@ func FindOrphanWorks(c client.Client, bindingNamespace, bindingName string, expe
 }
 
 // RemoveOrphanWorks will remove orphan works.
-func RemoveOrphanWorks(c client.Client, works []workv1alpha1.Work) error {
+func RemoveOrphanWorks(ctx context.Context, c client.Client, works []workv1alpha1.Work) error {
 	var errs []error
 	for workIndex, work := range works {
-		err := c.Delete(context.TODO(), &works[workIndex])
+		err := c.Delete(ctx, &works[workIndex])
 		if err != nil {
 			klog.Errorf("Failed to delete orphan work %s/%s, err is %v", work.GetNamespace(), work.GetName(), err)
 			errs = append(errs, err)
@@ -237,6 +242,7 @@ func RemoveOrphanWorks(c client.Client, works []workv1alpha1.Work) error {
 // We should abide by the principle of making a deep copy first and then modifying it.
 // See issue: https://github.com/karmada-io/karmada/issues/3878.
 func FetchResourceTemplate(
+	ctx context.Context,
 	dynamicClient dynamic.Interface,
 	informerManager genericmanager.SingleClusterInformerManager,
 	restMapper meta.RESTMapper,
@@ -260,7 +266,7 @@ func FetchResourceTemplate(
 		// fall back to call api server in case the cache has not been synchronized yet
 		klog.Warningf("Failed to get resource template (%s/%s/%s) from cache, Error: %v. Fall back to call api server.",
 			resource.Kind, resource.Namespace, resource.Name, err)
-		object, err = dynamicClient.Resource(gvr).Namespace(resource.Namespace).Get(context.TODO(), resource.Name, metav1.GetOptions{})
+		object, err = dynamicClient.Resource(gvr).Namespace(resource.Namespace).Get(ctx, resource.Name, metav1.GetOptions{})
 		if err != nil {
 			klog.Errorf("Failed to get resource template (%s/%s/%s) from api server, Error: %v",
 				resource.Kind, resource.Namespace, resource.Name, err)
@@ -277,11 +283,11 @@ func FetchResourceTemplate(
 	return unstructuredObj, nil
 }
 
-// FetchResourceTemplateByLabelSelector fetches the resource template by label selector to be propagated.
+// FetchResourceTemplatesByLabelSelector fetches the resource templates by label selector to be propagated.
 // Any updates to this resource template are not recommended as it may come from the informer cache.
 // We should abide by the principle of making a deep copy first and then modifying it.
 // See issue: https://github.com/karmada-io/karmada/issues/3878.
-func FetchResourceTemplateByLabelSelector(
+func FetchResourceTemplatesByLabelSelector(
 	dynamicClient dynamic.Interface,
 	informerManager genericmanager.SingleClusterInformerManager,
 	restMapper meta.RESTMapper,
@@ -343,27 +349,17 @@ func GetResourceBindings(c client.Client, ls labels.Set) (*workv1alpha2.Resource
 	return bindings, c.List(context.TODO(), bindings, listOpt)
 }
 
-// DeleteWorkByRBNamespaceAndName will delete all Work objects by ResourceBinding namespace and name.
-func DeleteWorkByRBNamespaceAndName(c client.Client, namespace, name string) error {
-	return DeleteWorks(c, namespace, name)
-}
-
-// DeleteWorkByCRBName will delete all Work objects by ClusterResourceBinding name.
-func DeleteWorkByCRBName(c client.Client, name string) error {
-	return DeleteWorks(c, "", name)
-}
-
 // DeleteWorks will delete all Work objects by labels.
-func DeleteWorks(c client.Client, namespace, name string) error {
-	workList, err := GetWorksByBindingNamespaceName(c, namespace, name)
+func DeleteWorks(ctx context.Context, c client.Client, namespace, name, bindingID string) error {
+	workList, err := GetWorksByBindingID(ctx, c, bindingID, namespace != "")
 	if err != nil {
-		klog.Errorf("Failed to get works by ResourceBinding(%s/%s) : %v", namespace, name, err)
+		klog.Errorf("Failed to get works by (Cluster)ResourceBinding(%s/%s) : %v", namespace, name, err)
 		return err
 	}
 
 	var errs []error
 	for index, work := range workList.Items {
-		if err := c.Delete(context.TODO(), &workList.Items[index]); err != nil {
+		if err := c.Delete(ctx, &workList.Items[index]); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
@@ -396,10 +392,17 @@ func GenerateReplicaRequirements(podTemplate *corev1.PodTemplateSpec) *workv1alp
 	resourceRequest := util.EmptyResource().AddPodTemplateRequest(&podTemplate.Spec).ResourceList()
 
 	if nodeClaim != nil || resourceRequest != nil {
-		return &workv1alpha2.ReplicaRequirements{
+		replicaRequirements := &workv1alpha2.ReplicaRequirements{
 			NodeClaim:       nodeClaim,
 			ResourceRequest: resourceRequest,
 		}
+		if features.FeatureGate.Enabled(features.ResourceQuotaEstimate) {
+			replicaRequirements.Namespace = podTemplate.Namespace
+			// PriorityClassName is set from podTemplate
+			// If it is not set from podTemplate, it is default to an empty string
+			replicaRequirements.PriorityClassName = podTemplate.Spec.PriorityClassName
+		}
+		return replicaRequirements
 	}
 
 	return nil

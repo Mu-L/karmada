@@ -42,12 +42,10 @@ import (
 	"github.com/karmada-io/karmada/pkg/util/names"
 	"github.com/karmada-io/karmada/test/e2e/framework"
 	"github.com/karmada-io/karmada/test/helper"
-	testhelper "github.com/karmada-io/karmada/test/helper"
 )
 
 var (
-	serviceExportClusterName = "member1"
-	serviceImportClusterName = "member2"
+	serviceExportClusterName, serviceImportClusterName string
 
 	serviceExportResource = "serviceexports"
 	serviceImportResource = "serviceimports"
@@ -156,7 +154,7 @@ func getPrepareInfo() (serviceExport mcsv1alpha1.ServiceExport, serviceImport mc
 
 	exportPolicyNamespace := serviceExport.Namespace
 	exportPolicyName := fmt.Sprintf("export-%s-policy", serviceExport.Name)
-	exportPolicy = testhelper.NewPropagationPolicy(exportPolicyNamespace, exportPolicyName, []policyv1alpha1.ResourceSelector{
+	exportPolicy = helper.NewPropagationPolicy(exportPolicyNamespace, exportPolicyName, []policyv1alpha1.ResourceSelector{
 		{
 			APIVersion: serviceExport.APIVersion,
 			Kind:       serviceExport.Kind,
@@ -171,7 +169,7 @@ func getPrepareInfo() (serviceExport mcsv1alpha1.ServiceExport, serviceImport mc
 
 	importPolicyNamespace := serviceImport.Namespace
 	importPolicyName := fmt.Sprintf("import-%s-policy", serviceImport.Name)
-	importPolicy = testhelper.NewPropagationPolicy(importPolicyNamespace, importPolicyName, []policyv1alpha1.ResourceSelector{
+	importPolicy = helper.NewPropagationPolicy(importPolicyNamespace, importPolicyName, []policyv1alpha1.ResourceSelector{
 		{
 			APIVersion: serviceImport.APIVersion,
 			Kind:       serviceImport.Kind,
@@ -205,10 +203,12 @@ var _ = ginkgo.Describe("Multi-Cluster Service testing", func() {
 	var demoService corev1.Service
 
 	ginkgo.BeforeEach(func() {
+		serviceExportClusterName = framework.ClusterNames()[0]
+		serviceImportClusterName = framework.ClusterNames()[1]
 		serviceExportPolicyName = fmt.Sprintf("%s-%s-policy", serviceExportResource, rand.String(RandomStrLength))
 		serviceImportPolicyName = fmt.Sprintf("%s-%s-policy", serviceImportResource, rand.String(RandomStrLength))
 
-		serviceExportPolicy = testhelper.NewClusterPropagationPolicy(serviceExportPolicyName, []policyv1alpha1.ResourceSelector{
+		serviceExportPolicy = helper.NewClusterPropagationPolicy(serviceExportPolicyName, []policyv1alpha1.ResourceSelector{
 			{
 				APIVersion: apiextensionsv1.SchemeGroupVersion.String(),
 				Kind:       util.CRDKind,
@@ -219,7 +219,7 @@ var _ = ginkgo.Describe("Multi-Cluster Service testing", func() {
 				ClusterNames: framework.ClusterNames(),
 			},
 		})
-		serviceImportPolicy = testhelper.NewClusterPropagationPolicy(serviceImportPolicyName, []policyv1alpha1.ResourceSelector{
+		serviceImportPolicy = helper.NewClusterPropagationPolicy(serviceImportPolicyName, []policyv1alpha1.ResourceSelector{
 			{
 				APIVersion: apiextensionsv1.SchemeGroupVersion.String(),
 				Kind:       util.CRDKind,
@@ -330,8 +330,8 @@ var _ = ginkgo.Describe("Multi-Cluster Service testing", func() {
 			framework.CreatePropagationPolicy(karmadaClient, importPolicy)
 
 			ginkgo.By(fmt.Sprintf("Wait derived-service(%s/%s) exist in %s cluster", demoService.Namespace, names.GenerateDerivedServiceName(demoService.Name), serviceImportClusterName), func() {
-				err := wait.PollImmediate(pollInterval, pollTimeout, func() (done bool, err error) {
-					_, err = importClusterClient.CoreV1().Services(demoService.Namespace).Get(context.TODO(), names.GenerateDerivedServiceName(demoService.Name), metav1.GetOptions{})
+				err := wait.PollUntilContextTimeout(context.TODO(), pollInterval, pollTimeout, true, func(ctx context.Context) (done bool, err error) {
+					_, err = importClusterClient.CoreV1().Services(demoService.Namespace).Get(ctx, names.GenerateDerivedServiceName(demoService.Name), metav1.GetOptions{})
 					if err != nil {
 						if apierrors.IsNotFound(err) {
 							return false, nil
@@ -529,7 +529,7 @@ var _ = ginkgo.Describe("CrossCluster MultiClusterService testing", func() {
 	})
 
 	// case 1: ProviderClusters field is [member1], ConsumerClusters field is [member2]
-	ginkgo.Context("ProviderClusters field is [member1], ConsumerClusters field is [member2]", func() {
+	ginkgo.Context(fmt.Sprintf("ProviderClusters field is [%s], ConsumerClusters field is [%s]", member1Name, member2Name), func() {
 		var mcs *networkingv1alpha1.MultiClusterService
 
 		ginkgo.BeforeEach(func() {
@@ -544,9 +544,6 @@ var _ = ginkgo.Describe("CrossCluster MultiClusterService testing", func() {
 		ginkgo.AfterEach(func() {
 			framework.RemoveMultiClusterService(karmadaClient, testNamespace, mcsName)
 			framework.RemovePropagationPolicy(karmadaClient, testNamespace, policyName)
-
-			framework.WaitServiceDisappearOnCluster(member1Name, testNamespace, serviceName)
-			framework.WaitServiceDisappearOnCluster(member2Name, testNamespace, serviceName)
 		})
 
 		ginkgo.It("Test dispatch EndpointSlice from the provider clusters to the consumer clusters", func() {
@@ -565,7 +562,7 @@ var _ = ginkgo.Describe("CrossCluster MultiClusterService testing", func() {
 	})
 
 	// case 2: ProviderClusters field is [member1,member2], ConsumerClusters field is [member2]
-	ginkgo.Context("ProviderClusters field is [member1,member2], ConsumerClusters field is [member2]", func() {
+	ginkgo.Context(fmt.Sprintf("ProviderClusters field is [%s,%s], ConsumerClusters field is [%s]", member1Name, member2Name, member2Name), func() {
 		var mcs *networkingv1alpha1.MultiClusterService
 
 		ginkgo.BeforeEach(func() {
@@ -580,9 +577,6 @@ var _ = ginkgo.Describe("CrossCluster MultiClusterService testing", func() {
 		ginkgo.AfterEach(func() {
 			framework.RemoveMultiClusterService(karmadaClient, testNamespace, mcsName)
 			framework.RemovePropagationPolicy(karmadaClient, testNamespace, policyName)
-
-			framework.WaitServiceDisappearOnCluster(member1Name, testNamespace, serviceName)
-			framework.WaitServiceDisappearOnCluster(member2Name, testNamespace, serviceName)
 		})
 
 		ginkgo.It("Test dispatch EndpointSlice from the provider clusters to the consumer clusters", func() {
@@ -618,9 +612,6 @@ var _ = ginkgo.Describe("CrossCluster MultiClusterService testing", func() {
 		ginkgo.AfterEach(func() {
 			framework.RemoveMultiClusterService(karmadaClient, testNamespace, mcsName)
 			framework.RemovePropagationPolicy(karmadaClient, testNamespace, policyName)
-
-			framework.WaitServiceDisappearOnCluster(member1Name, testNamespace, serviceName)
-			framework.WaitServiceDisappearOnCluster(member2Name, testNamespace, serviceName)
 		})
 
 		ginkgo.It("Test dispatch EndpointSlice from the provider clusters to the consumer clusters", func() {
@@ -651,7 +642,7 @@ var _ = ginkgo.Describe("CrossCluster MultiClusterService testing", func() {
 	})
 
 	// case 4: ProviderClusters field is empty, ConsumerClusters field is [member2]
-	ginkgo.Context("ProviderClusters field is empty, ConsumerClusters field is [member2]", func() {
+	ginkgo.Context(fmt.Sprintf("ProviderClusters field is empty, ConsumerClusters field is [%s]", member2Name), func() {
 		var mcs *networkingv1alpha1.MultiClusterService
 
 		ginkgo.BeforeEach(func() {
@@ -666,8 +657,6 @@ var _ = ginkgo.Describe("CrossCluster MultiClusterService testing", func() {
 		ginkgo.AfterEach(func() {
 			framework.RemoveMultiClusterService(karmadaClient, testNamespace, mcsName)
 			framework.RemovePropagationPolicy(karmadaClient, testNamespace, policyName)
-
-			framework.WaitServiceDisappearOnCluster(member2Name, testNamespace, serviceName)
 		})
 
 		ginkgo.It("Test dispatch EndpointSlice from the provider clusters to the consumer clusters", func() {
@@ -686,7 +675,7 @@ var _ = ginkgo.Describe("CrossCluster MultiClusterService testing", func() {
 	})
 
 	// case 5: ProviderClusters field is [member1], ConsumerClusters field is empty
-	ginkgo.Context("ProviderClusters field is [member1], ConsumerClusters field is empty", func() {
+	ginkgo.Context(fmt.Sprintf("ProviderClusters field is [%s], ConsumerClusters field is empty", member1Name), func() {
 		var mcs *networkingv1alpha1.MultiClusterService
 
 		ginkgo.BeforeEach(func() {
@@ -701,9 +690,6 @@ var _ = ginkgo.Describe("CrossCluster MultiClusterService testing", func() {
 		ginkgo.AfterEach(func() {
 			framework.RemoveMultiClusterService(karmadaClient, testNamespace, mcsName)
 			framework.RemovePropagationPolicy(karmadaClient, testNamespace, policyName)
-
-			framework.WaitServiceDisappearOnCluster(member1Name, testNamespace, serviceName)
-			framework.WaitServiceDisappearOnCluster(member2Name, testNamespace, serviceName)
 		})
 
 		ginkgo.It("Test dispatch EndpointSlice from the provider clusters to the consumer clusters", func() {
@@ -737,9 +723,6 @@ var _ = ginkgo.Describe("CrossCluster MultiClusterService testing", func() {
 		ginkgo.AfterEach(func() {
 			framework.RemoveMultiClusterService(karmadaClient, testNamespace, mcsName)
 			framework.RemovePropagationPolicy(karmadaClient, testNamespace, policyName)
-
-			framework.WaitServiceDisappearOnCluster(member1Name, testNamespace, serviceName)
-			framework.WaitServiceDisappearOnCluster(member2Name, testNamespace, serviceName)
 		})
 
 		ginkgo.It("Test dispatch EndpointSlice from the provider clusters to the consumer clusters", func() {

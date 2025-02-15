@@ -40,6 +40,852 @@
         }
       }
     },
+    "/apis/apps.karmada.io/": {
+      "get": {
+        "description": "get information of a group",
+        "consumes": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "appsKarmadaIo"
+        ],
+        "operationId": "getAppsKarmadaIoAPIGroup",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.APIGroup"
+            }
+          }
+        }
+      }
+    },
+    "/apis/apps.karmada.io/v1alpha1/": {
+      "get": {
+        "description": "get available resources",
+        "consumes": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "appsKarmadaIo_v1alpha1"
+        ],
+        "operationId": "getAppsKarmadaIoV1alpha1APIResources",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.APIResourceList"
+            }
+          }
+        }
+      }
+    },
+    "/apis/apps.karmada.io/v1alpha1/watch/workloadrebalancers": {
+      "get": {
+        "description": "watch individual changes to a list of WorkloadRebalancer. deprecated: use the 'watch' parameter with a list operation instead.",
+        "consumes": [
+          "*/*"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf",
+          "application/json;stream=watch",
+          "application/vnd.kubernetes.protobuf;stream=watch"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "appsKarmadaIo_v1alpha1"
+        ],
+        "operationId": "watchAppsKarmadaIoV1alpha1WorkloadRebalancerList",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
+            }
+          }
+        },
+        "x-kubernetes-action": "watchlist",
+        "x-kubernetes-group-version-kind": {
+          "group": "apps.karmada.io",
+          "version": "v1alpha1",
+          "kind": "WorkloadRebalancer"
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/parameters/allowWatchBookmarks-HC2hJt-J"
+        },
+        {
+          "$ref": "#/parameters/continue-QfD61s0i"
+        },
+        {
+          "$ref": "#/parameters/fieldSelector-xIcQKXFG"
+        },
+        {
+          "$ref": "#/parameters/labelSelector-5Zw57w4C"
+        },
+        {
+          "$ref": "#/parameters/limit-1NfNmdNH"
+        },
+        {
+          "$ref": "#/parameters/pretty-tJGM1-ng"
+        },
+        {
+          "$ref": "#/parameters/resourceVersion-5WAnf1kx"
+        },
+        {
+          "$ref": "#/parameters/resourceVersionMatch-t8XhRHeC"
+        },
+        {
+          "$ref": "#/parameters/sendInitialEvents-rLXlEK_k"
+        },
+        {
+          "$ref": "#/parameters/timeoutSeconds-yvYezaOC"
+        },
+        {
+          "$ref": "#/parameters/watch-XNNPZGbK"
+        }
+      ]
+    },
+    "/apis/apps.karmada.io/v1alpha1/watch/workloadrebalancers/{name}": {
+      "get": {
+        "description": "watch changes to an object of kind WorkloadRebalancer. deprecated: use the 'watch' parameter with a list operation instead, filtered to a single item with the 'fieldSelector' parameter.",
+        "consumes": [
+          "*/*"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf",
+          "application/json;stream=watch",
+          "application/vnd.kubernetes.protobuf;stream=watch"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "appsKarmadaIo_v1alpha1"
+        ],
+        "operationId": "watchAppsKarmadaIoV1alpha1WorkloadRebalancer",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
+            }
+          }
+        },
+        "x-kubernetes-action": "watch",
+        "x-kubernetes-group-version-kind": {
+          "group": "apps.karmada.io",
+          "version": "v1alpha1",
+          "kind": "WorkloadRebalancer"
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/parameters/allowWatchBookmarks-HC2hJt-J"
+        },
+        {
+          "$ref": "#/parameters/continue-QfD61s0i"
+        },
+        {
+          "$ref": "#/parameters/fieldSelector-xIcQKXFG"
+        },
+        {
+          "$ref": "#/parameters/labelSelector-5Zw57w4C"
+        },
+        {
+          "$ref": "#/parameters/limit-1NfNmdNH"
+        },
+        {
+          "uniqueItems": true,
+          "type": "string",
+          "description": "name of the WorkloadRebalancer",
+          "name": "name",
+          "in": "path",
+          "required": true
+        },
+        {
+          "$ref": "#/parameters/pretty-tJGM1-ng"
+        },
+        {
+          "$ref": "#/parameters/resourceVersion-5WAnf1kx"
+        },
+        {
+          "$ref": "#/parameters/resourceVersionMatch-t8XhRHeC"
+        },
+        {
+          "$ref": "#/parameters/sendInitialEvents-rLXlEK_k"
+        },
+        {
+          "$ref": "#/parameters/timeoutSeconds-yvYezaOC"
+        },
+        {
+          "$ref": "#/parameters/watch-XNNPZGbK"
+        }
+      ]
+    },
+    "/apis/apps.karmada.io/v1alpha1/workloadrebalancers": {
+      "get": {
+        "description": "list or watch objects of kind WorkloadRebalancer",
+        "consumes": [
+          "*/*"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf",
+          "application/json;stream=watch",
+          "application/vnd.kubernetes.protobuf;stream=watch"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "appsKarmadaIo_v1alpha1"
+        ],
+        "operationId": "listAppsKarmadaIoV1alpha1WorkloadRebalancer",
+        "parameters": [
+          {
+            "$ref": "#/parameters/allowWatchBookmarks-HC2hJt-J"
+          },
+          {
+            "$ref": "#/parameters/continue-QfD61s0i"
+          },
+          {
+            "$ref": "#/parameters/fieldSelector-xIcQKXFG"
+          },
+          {
+            "$ref": "#/parameters/labelSelector-5Zw57w4C"
+          },
+          {
+            "$ref": "#/parameters/limit-1NfNmdNH"
+          },
+          {
+            "$ref": "#/parameters/resourceVersion-5WAnf1kx"
+          },
+          {
+            "$ref": "#/parameters/resourceVersionMatch-t8XhRHeC"
+          },
+          {
+            "$ref": "#/parameters/sendInitialEvents-rLXlEK_k"
+          },
+          {
+            "$ref": "#/parameters/timeoutSeconds-yvYezaOC"
+          },
+          {
+            "$ref": "#/parameters/watch-XNNPZGbK"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancerList"
+            }
+          }
+        },
+        "x-kubernetes-action": "list",
+        "x-kubernetes-group-version-kind": {
+          "group": "apps.karmada.io",
+          "version": "v1alpha1",
+          "kind": "WorkloadRebalancer"
+        }
+      },
+      "post": {
+        "description": "create a WorkloadRebalancer",
+        "consumes": [
+          "*/*"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "appsKarmadaIo_v1alpha1"
+        ],
+        "operationId": "createAppsKarmadaIoV1alpha1WorkloadRebalancer",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancer"
+            }
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
+            "name": "dryRun",
+            "in": "query"
+          },
+          {
+            "$ref": "#/parameters/fieldManager-Qy4HdaTW"
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "fieldValidation instructs the server on how to handle objects in the request (POST/PUT/PATCH) containing unknown or duplicate fields. Valid values are: - Ignore: This will ignore any unknown fields that are silently dropped from the object, and will ignore all but the last duplicate field that the decoder encounters. This is the default behavior prior to v1.23. - Warn: This will send a warning via the standard warning response header for each unknown field that is dropped from the object, and for each duplicate field that is encountered. The request will still succeed if there are no other errors, and will only persist the last of any duplicate fields. This is the default in v1.23+ - Strict: This will fail the request with a BadRequest error if any unknown fields would be dropped from the object, or if any duplicate fields are present. The error returned from the server will contain all unknown and duplicate fields encountered.",
+            "name": "fieldValidation",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancer"
+            }
+          },
+          "201": {
+            "description": "Created",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancer"
+            }
+          },
+          "202": {
+            "description": "Accepted",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancer"
+            }
+          }
+        },
+        "x-kubernetes-action": "post",
+        "x-kubernetes-group-version-kind": {
+          "group": "apps.karmada.io",
+          "version": "v1alpha1",
+          "kind": "WorkloadRebalancer"
+        }
+      },
+      "delete": {
+        "description": "delete collection of WorkloadRebalancer",
+        "consumes": [
+          "*/*"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "appsKarmadaIo_v1alpha1"
+        ],
+        "operationId": "deleteAppsKarmadaIoV1alpha1CollectionWorkloadRebalancer",
+        "parameters": [
+          {
+            "$ref": "#/parameters/body-2Y1dVQaQ"
+          },
+          {
+            "$ref": "#/parameters/continue-QfD61s0i"
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
+            "name": "dryRun",
+            "in": "query"
+          },
+          {
+            "$ref": "#/parameters/fieldSelector-xIcQKXFG"
+          },
+          {
+            "$ref": "#/parameters/gracePeriodSeconds--K5HaBOS"
+          },
+          {
+            "$ref": "#/parameters/labelSelector-5Zw57w4C"
+          },
+          {
+            "$ref": "#/parameters/limit-1NfNmdNH"
+          },
+          {
+            "$ref": "#/parameters/orphanDependents-uRB25kX5"
+          },
+          {
+            "$ref": "#/parameters/propagationPolicy-6jk3prlO"
+          },
+          {
+            "$ref": "#/parameters/resourceVersion-5WAnf1kx"
+          },
+          {
+            "$ref": "#/parameters/resourceVersionMatch-t8XhRHeC"
+          },
+          {
+            "$ref": "#/parameters/sendInitialEvents-rLXlEK_k"
+          },
+          {
+            "$ref": "#/parameters/timeoutSeconds-yvYezaOC"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Status"
+            }
+          }
+        },
+        "x-kubernetes-action": "deletecollection",
+        "x-kubernetes-group-version-kind": {
+          "group": "apps.karmada.io",
+          "version": "v1alpha1",
+          "kind": "WorkloadRebalancer"
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/parameters/pretty-tJGM1-ng"
+        }
+      ]
+    },
+    "/apis/apps.karmada.io/v1alpha1/workloadrebalancers/{name}": {
+      "get": {
+        "description": "read the specified WorkloadRebalancer",
+        "consumes": [
+          "*/*"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "appsKarmadaIo_v1alpha1"
+        ],
+        "operationId": "readAppsKarmadaIoV1alpha1WorkloadRebalancer",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancer"
+            }
+          }
+        },
+        "x-kubernetes-action": "get",
+        "x-kubernetes-group-version-kind": {
+          "group": "apps.karmada.io",
+          "version": "v1alpha1",
+          "kind": "WorkloadRebalancer"
+        }
+      },
+      "put": {
+        "description": "replace the specified WorkloadRebalancer",
+        "consumes": [
+          "*/*"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "appsKarmadaIo_v1alpha1"
+        ],
+        "operationId": "replaceAppsKarmadaIoV1alpha1WorkloadRebalancer",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancer"
+            }
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
+            "name": "dryRun",
+            "in": "query"
+          },
+          {
+            "$ref": "#/parameters/fieldManager-Qy4HdaTW"
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "fieldValidation instructs the server on how to handle objects in the request (POST/PUT/PATCH) containing unknown or duplicate fields. Valid values are: - Ignore: This will ignore any unknown fields that are silently dropped from the object, and will ignore all but the last duplicate field that the decoder encounters. This is the default behavior prior to v1.23. - Warn: This will send a warning via the standard warning response header for each unknown field that is dropped from the object, and for each duplicate field that is encountered. The request will still succeed if there are no other errors, and will only persist the last of any duplicate fields. This is the default in v1.23+ - Strict: This will fail the request with a BadRequest error if any unknown fields would be dropped from the object, or if any duplicate fields are present. The error returned from the server will contain all unknown and duplicate fields encountered.",
+            "name": "fieldValidation",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancer"
+            }
+          },
+          "201": {
+            "description": "Created",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancer"
+            }
+          }
+        },
+        "x-kubernetes-action": "put",
+        "x-kubernetes-group-version-kind": {
+          "group": "apps.karmada.io",
+          "version": "v1alpha1",
+          "kind": "WorkloadRebalancer"
+        }
+      },
+      "delete": {
+        "description": "delete a WorkloadRebalancer",
+        "consumes": [
+          "*/*"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "appsKarmadaIo_v1alpha1"
+        ],
+        "operationId": "deleteAppsKarmadaIoV1alpha1WorkloadRebalancer",
+        "parameters": [
+          {
+            "$ref": "#/parameters/body-2Y1dVQaQ"
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
+            "name": "dryRun",
+            "in": "query"
+          },
+          {
+            "$ref": "#/parameters/gracePeriodSeconds--K5HaBOS"
+          },
+          {
+            "$ref": "#/parameters/orphanDependents-uRB25kX5"
+          },
+          {
+            "$ref": "#/parameters/propagationPolicy-6jk3prlO"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Status"
+            }
+          },
+          "202": {
+            "description": "Accepted",
+            "schema": {
+              "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Status"
+            }
+          }
+        },
+        "x-kubernetes-action": "delete",
+        "x-kubernetes-group-version-kind": {
+          "group": "apps.karmada.io",
+          "version": "v1alpha1",
+          "kind": "WorkloadRebalancer"
+        }
+      },
+      "patch": {
+        "description": "partially update the specified WorkloadRebalancer",
+        "consumes": [
+          "application/json-patch+json",
+          "application/merge-patch+json",
+          "application/strategic-merge-patch+json",
+          "application/apply-patch+yaml"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "appsKarmadaIo_v1alpha1"
+        ],
+        "operationId": "patchAppsKarmadaIoV1alpha1WorkloadRebalancer",
+        "parameters": [
+          {
+            "$ref": "#/parameters/body-78PwaGsr"
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
+            "name": "dryRun",
+            "in": "query"
+          },
+          {
+            "$ref": "#/parameters/fieldManager-7c6nTn1T"
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "fieldValidation instructs the server on how to handle objects in the request (POST/PUT/PATCH) containing unknown or duplicate fields. Valid values are: - Ignore: This will ignore any unknown fields that are silently dropped from the object, and will ignore all but the last duplicate field that the decoder encounters. This is the default behavior prior to v1.23. - Warn: This will send a warning via the standard warning response header for each unknown field that is dropped from the object, and for each duplicate field that is encountered. The request will still succeed if there are no other errors, and will only persist the last of any duplicate fields. This is the default in v1.23+ - Strict: This will fail the request with a BadRequest error if any unknown fields would be dropped from the object, or if any duplicate fields are present. The error returned from the server will contain all unknown and duplicate fields encountered.",
+            "name": "fieldValidation",
+            "in": "query"
+          },
+          {
+            "$ref": "#/parameters/force-tOGGb0Yi"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancer"
+            }
+          },
+          "201": {
+            "description": "Created",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancer"
+            }
+          }
+        },
+        "x-kubernetes-action": "patch",
+        "x-kubernetes-group-version-kind": {
+          "group": "apps.karmada.io",
+          "version": "v1alpha1",
+          "kind": "WorkloadRebalancer"
+        }
+      },
+      "parameters": [
+        {
+          "uniqueItems": true,
+          "type": "string",
+          "description": "name of the WorkloadRebalancer",
+          "name": "name",
+          "in": "path",
+          "required": true
+        },
+        {
+          "$ref": "#/parameters/pretty-tJGM1-ng"
+        }
+      ]
+    },
+    "/apis/apps.karmada.io/v1alpha1/workloadrebalancers/{name}/status": {
+      "get": {
+        "description": "read status of the specified WorkloadRebalancer",
+        "consumes": [
+          "*/*"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "appsKarmadaIo_v1alpha1"
+        ],
+        "operationId": "readAppsKarmadaIoV1alpha1WorkloadRebalancerStatus",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancer"
+            }
+          }
+        },
+        "x-kubernetes-action": "get",
+        "x-kubernetes-group-version-kind": {
+          "group": "apps.karmada.io",
+          "version": "v1alpha1",
+          "kind": "WorkloadRebalancer"
+        }
+      },
+      "put": {
+        "description": "replace status of the specified WorkloadRebalancer",
+        "consumes": [
+          "*/*"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "appsKarmadaIo_v1alpha1"
+        ],
+        "operationId": "replaceAppsKarmadaIoV1alpha1WorkloadRebalancerStatus",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancer"
+            }
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
+            "name": "dryRun",
+            "in": "query"
+          },
+          {
+            "$ref": "#/parameters/fieldManager-Qy4HdaTW"
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "fieldValidation instructs the server on how to handle objects in the request (POST/PUT/PATCH) containing unknown or duplicate fields. Valid values are: - Ignore: This will ignore any unknown fields that are silently dropped from the object, and will ignore all but the last duplicate field that the decoder encounters. This is the default behavior prior to v1.23. - Warn: This will send a warning via the standard warning response header for each unknown field that is dropped from the object, and for each duplicate field that is encountered. The request will still succeed if there are no other errors, and will only persist the last of any duplicate fields. This is the default in v1.23+ - Strict: This will fail the request with a BadRequest error if any unknown fields would be dropped from the object, or if any duplicate fields are present. The error returned from the server will contain all unknown and duplicate fields encountered.",
+            "name": "fieldValidation",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancer"
+            }
+          },
+          "201": {
+            "description": "Created",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancer"
+            }
+          }
+        },
+        "x-kubernetes-action": "put",
+        "x-kubernetes-group-version-kind": {
+          "group": "apps.karmada.io",
+          "version": "v1alpha1",
+          "kind": "WorkloadRebalancer"
+        }
+      },
+      "patch": {
+        "description": "partially update status of the specified WorkloadRebalancer",
+        "consumes": [
+          "application/json-patch+json",
+          "application/merge-patch+json",
+          "application/strategic-merge-patch+json",
+          "application/apply-patch+yaml"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "appsKarmadaIo_v1alpha1"
+        ],
+        "operationId": "patchAppsKarmadaIoV1alpha1WorkloadRebalancerStatus",
+        "parameters": [
+          {
+            "$ref": "#/parameters/body-78PwaGsr"
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
+            "name": "dryRun",
+            "in": "query"
+          },
+          {
+            "$ref": "#/parameters/fieldManager-7c6nTn1T"
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "fieldValidation instructs the server on how to handle objects in the request (POST/PUT/PATCH) containing unknown or duplicate fields. Valid values are: - Ignore: This will ignore any unknown fields that are silently dropped from the object, and will ignore all but the last duplicate field that the decoder encounters. This is the default behavior prior to v1.23. - Warn: This will send a warning via the standard warning response header for each unknown field that is dropped from the object, and for each duplicate field that is encountered. The request will still succeed if there are no other errors, and will only persist the last of any duplicate fields. This is the default in v1.23+ - Strict: This will fail the request with a BadRequest error if any unknown fields would be dropped from the object, or if any duplicate fields are present. The error returned from the server will contain all unknown and duplicate fields encountered.",
+            "name": "fieldValidation",
+            "in": "query"
+          },
+          {
+            "$ref": "#/parameters/force-tOGGb0Yi"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancer"
+            }
+          },
+          "201": {
+            "description": "Created",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancer"
+            }
+          }
+        },
+        "x-kubernetes-action": "patch",
+        "x-kubernetes-group-version-kind": {
+          "group": "apps.karmada.io",
+          "version": "v1alpha1",
+          "kind": "WorkloadRebalancer"
+        }
+      },
+      "parameters": [
+        {
+          "uniqueItems": true,
+          "type": "string",
+          "description": "name of the WorkloadRebalancer",
+          "name": "name",
+          "in": "path",
+          "required": true
+        },
+        {
+          "$ref": "#/parameters/pretty-tJGM1-ng"
+        }
+      ]
+    },
     "/apis/autoscaling.karmada.io/": {
       "get": {
         "description": "get information of a group",
@@ -152,7 +998,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -223,7 +1069,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -462,7 +1308,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -702,7 +1548,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -883,7 +1729,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -1107,7 +1953,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -1347,7 +2193,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -1528,7 +2374,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -1584,7 +2430,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -1655,7 +2501,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -1729,7 +2575,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -1811,7 +2657,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -1885,7 +2731,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -1967,7 +2813,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -2263,7 +3109,7 @@
       },
       "parameters": [
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -2500,7 +3346,7 @@
           "required": true
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -3131,7 +3977,7 @@
           "required": true
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -3187,7 +4033,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -3266,7 +4112,7 @@
           "required": true
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -3562,7 +4408,7 @@
       },
       "parameters": [
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -3799,7 +4645,7 @@
           "required": true
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -3977,7 +4823,7 @@
           "required": true
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -4198,7 +5044,7 @@
       },
       "parameters": [
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -4435,7 +5281,7 @@
           "required": true
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -4613,7 +5459,7 @@
           "required": true
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -4669,7 +5515,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -4748,7 +5594,7 @@
           "required": true
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -4819,7 +5665,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -4898,7 +5744,7 @@
           "required": true
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -5029,7 +5875,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -5100,7 +5946,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -5339,7 +6185,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -5579,7 +6425,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -5760,7 +6606,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -5984,7 +6830,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -6224,7 +7070,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -6405,7 +7251,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -6461,7 +7307,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -6532,7 +7378,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -6606,7 +7452,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -6688,7 +7534,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -6762,7 +7608,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -6844,7 +7690,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -7140,7 +7986,7 @@
       },
       "parameters": [
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -7377,7 +8223,7 @@
           "required": true
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -7555,7 +8401,7 @@
           "required": true
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -7776,7 +8622,7 @@
       },
       "parameters": [
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -8013,7 +8859,7 @@
           "required": true
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -8191,7 +9037,7 @@
           "required": true
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -8247,7 +9093,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -8486,7 +9332,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -8726,7 +9572,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -8907,7 +9753,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -9131,7 +9977,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -9371,7 +10217,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -9552,7 +10398,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -9776,7 +10622,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -10016,7 +10862,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -10197,7 +11043,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -10253,7 +11099,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -10324,7 +11170,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -10395,7 +11241,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -10474,7 +11320,7 @@
           "required": true
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -10545,7 +11391,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -10624,7 +11470,7 @@
           "required": true
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -10695,7 +11541,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -10769,7 +11615,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -10851,7 +11697,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -10925,7 +11771,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -11007,7 +11853,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -11081,7 +11927,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -11163,7 +12009,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -11234,7 +12080,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -11305,7 +12151,853 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
+        },
+        {
+          "$ref": "#/parameters/resourceVersion-5WAnf1kx"
+        },
+        {
+          "$ref": "#/parameters/resourceVersionMatch-t8XhRHeC"
+        },
+        {
+          "$ref": "#/parameters/sendInitialEvents-rLXlEK_k"
+        },
+        {
+          "$ref": "#/parameters/timeoutSeconds-yvYezaOC"
+        },
+        {
+          "$ref": "#/parameters/watch-XNNPZGbK"
+        }
+      ]
+    },
+    "/apis/remedy.karmada.io/": {
+      "get": {
+        "description": "get information of a group",
+        "consumes": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "remedyKarmadaIo"
+        ],
+        "operationId": "getRemedyKarmadaIoAPIGroup",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.APIGroup"
+            }
+          }
+        }
+      }
+    },
+    "/apis/remedy.karmada.io/v1alpha1/": {
+      "get": {
+        "description": "get available resources",
+        "consumes": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "remedyKarmadaIo_v1alpha1"
+        ],
+        "operationId": "getRemedyKarmadaIoV1alpha1APIResources",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.APIResourceList"
+            }
+          }
+        }
+      }
+    },
+    "/apis/remedy.karmada.io/v1alpha1/remedies": {
+      "get": {
+        "description": "list or watch objects of kind Remedy",
+        "consumes": [
+          "*/*"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf",
+          "application/json;stream=watch",
+          "application/vnd.kubernetes.protobuf;stream=watch"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "remedyKarmadaIo_v1alpha1"
+        ],
+        "operationId": "listRemedyKarmadaIoV1alpha1Remedy",
+        "parameters": [
+          {
+            "$ref": "#/parameters/allowWatchBookmarks-HC2hJt-J"
+          },
+          {
+            "$ref": "#/parameters/continue-QfD61s0i"
+          },
+          {
+            "$ref": "#/parameters/fieldSelector-xIcQKXFG"
+          },
+          {
+            "$ref": "#/parameters/labelSelector-5Zw57w4C"
+          },
+          {
+            "$ref": "#/parameters/limit-1NfNmdNH"
+          },
+          {
+            "$ref": "#/parameters/resourceVersion-5WAnf1kx"
+          },
+          {
+            "$ref": "#/parameters/resourceVersionMatch-t8XhRHeC"
+          },
+          {
+            "$ref": "#/parameters/sendInitialEvents-rLXlEK_k"
+          },
+          {
+            "$ref": "#/parameters/timeoutSeconds-yvYezaOC"
+          },
+          {
+            "$ref": "#/parameters/watch-XNNPZGbK"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.RemedyList"
+            }
+          }
+        },
+        "x-kubernetes-action": "list",
+        "x-kubernetes-group-version-kind": {
+          "group": "remedy.karmada.io",
+          "version": "v1alpha1",
+          "kind": "Remedy"
+        }
+      },
+      "post": {
+        "description": "create a Remedy",
+        "consumes": [
+          "*/*"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "remedyKarmadaIo_v1alpha1"
+        ],
+        "operationId": "createRemedyKarmadaIoV1alpha1Remedy",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.Remedy"
+            }
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
+            "name": "dryRun",
+            "in": "query"
+          },
+          {
+            "$ref": "#/parameters/fieldManager-Qy4HdaTW"
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "fieldValidation instructs the server on how to handle objects in the request (POST/PUT/PATCH) containing unknown or duplicate fields. Valid values are: - Ignore: This will ignore any unknown fields that are silently dropped from the object, and will ignore all but the last duplicate field that the decoder encounters. This is the default behavior prior to v1.23. - Warn: This will send a warning via the standard warning response header for each unknown field that is dropped from the object, and for each duplicate field that is encountered. The request will still succeed if there are no other errors, and will only persist the last of any duplicate fields. This is the default in v1.23+ - Strict: This will fail the request with a BadRequest error if any unknown fields would be dropped from the object, or if any duplicate fields are present. The error returned from the server will contain all unknown and duplicate fields encountered.",
+            "name": "fieldValidation",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.Remedy"
+            }
+          },
+          "201": {
+            "description": "Created",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.Remedy"
+            }
+          },
+          "202": {
+            "description": "Accepted",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.Remedy"
+            }
+          }
+        },
+        "x-kubernetes-action": "post",
+        "x-kubernetes-group-version-kind": {
+          "group": "remedy.karmada.io",
+          "version": "v1alpha1",
+          "kind": "Remedy"
+        }
+      },
+      "delete": {
+        "description": "delete collection of Remedy",
+        "consumes": [
+          "*/*"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "remedyKarmadaIo_v1alpha1"
+        ],
+        "operationId": "deleteRemedyKarmadaIoV1alpha1CollectionRemedy",
+        "parameters": [
+          {
+            "$ref": "#/parameters/body-2Y1dVQaQ"
+          },
+          {
+            "$ref": "#/parameters/continue-QfD61s0i"
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
+            "name": "dryRun",
+            "in": "query"
+          },
+          {
+            "$ref": "#/parameters/fieldSelector-xIcQKXFG"
+          },
+          {
+            "$ref": "#/parameters/gracePeriodSeconds--K5HaBOS"
+          },
+          {
+            "$ref": "#/parameters/labelSelector-5Zw57w4C"
+          },
+          {
+            "$ref": "#/parameters/limit-1NfNmdNH"
+          },
+          {
+            "$ref": "#/parameters/orphanDependents-uRB25kX5"
+          },
+          {
+            "$ref": "#/parameters/propagationPolicy-6jk3prlO"
+          },
+          {
+            "$ref": "#/parameters/resourceVersion-5WAnf1kx"
+          },
+          {
+            "$ref": "#/parameters/resourceVersionMatch-t8XhRHeC"
+          },
+          {
+            "$ref": "#/parameters/sendInitialEvents-rLXlEK_k"
+          },
+          {
+            "$ref": "#/parameters/timeoutSeconds-yvYezaOC"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Status"
+            }
+          }
+        },
+        "x-kubernetes-action": "deletecollection",
+        "x-kubernetes-group-version-kind": {
+          "group": "remedy.karmada.io",
+          "version": "v1alpha1",
+          "kind": "Remedy"
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/parameters/pretty-tJGM1-ng"
+        }
+      ]
+    },
+    "/apis/remedy.karmada.io/v1alpha1/remedies/{name}": {
+      "get": {
+        "description": "read the specified Remedy",
+        "consumes": [
+          "*/*"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "remedyKarmadaIo_v1alpha1"
+        ],
+        "operationId": "readRemedyKarmadaIoV1alpha1Remedy",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.Remedy"
+            }
+          }
+        },
+        "x-kubernetes-action": "get",
+        "x-kubernetes-group-version-kind": {
+          "group": "remedy.karmada.io",
+          "version": "v1alpha1",
+          "kind": "Remedy"
+        }
+      },
+      "put": {
+        "description": "replace the specified Remedy",
+        "consumes": [
+          "*/*"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "remedyKarmadaIo_v1alpha1"
+        ],
+        "operationId": "replaceRemedyKarmadaIoV1alpha1Remedy",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.Remedy"
+            }
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
+            "name": "dryRun",
+            "in": "query"
+          },
+          {
+            "$ref": "#/parameters/fieldManager-Qy4HdaTW"
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "fieldValidation instructs the server on how to handle objects in the request (POST/PUT/PATCH) containing unknown or duplicate fields. Valid values are: - Ignore: This will ignore any unknown fields that are silently dropped from the object, and will ignore all but the last duplicate field that the decoder encounters. This is the default behavior prior to v1.23. - Warn: This will send a warning via the standard warning response header for each unknown field that is dropped from the object, and for each duplicate field that is encountered. The request will still succeed if there are no other errors, and will only persist the last of any duplicate fields. This is the default in v1.23+ - Strict: This will fail the request with a BadRequest error if any unknown fields would be dropped from the object, or if any duplicate fields are present. The error returned from the server will contain all unknown and duplicate fields encountered.",
+            "name": "fieldValidation",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.Remedy"
+            }
+          },
+          "201": {
+            "description": "Created",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.Remedy"
+            }
+          }
+        },
+        "x-kubernetes-action": "put",
+        "x-kubernetes-group-version-kind": {
+          "group": "remedy.karmada.io",
+          "version": "v1alpha1",
+          "kind": "Remedy"
+        }
+      },
+      "delete": {
+        "description": "delete a Remedy",
+        "consumes": [
+          "*/*"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "remedyKarmadaIo_v1alpha1"
+        ],
+        "operationId": "deleteRemedyKarmadaIoV1alpha1Remedy",
+        "parameters": [
+          {
+            "$ref": "#/parameters/body-2Y1dVQaQ"
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
+            "name": "dryRun",
+            "in": "query"
+          },
+          {
+            "$ref": "#/parameters/gracePeriodSeconds--K5HaBOS"
+          },
+          {
+            "$ref": "#/parameters/orphanDependents-uRB25kX5"
+          },
+          {
+            "$ref": "#/parameters/propagationPolicy-6jk3prlO"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Status"
+            }
+          },
+          "202": {
+            "description": "Accepted",
+            "schema": {
+              "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Status"
+            }
+          }
+        },
+        "x-kubernetes-action": "delete",
+        "x-kubernetes-group-version-kind": {
+          "group": "remedy.karmada.io",
+          "version": "v1alpha1",
+          "kind": "Remedy"
+        }
+      },
+      "patch": {
+        "description": "partially update the specified Remedy",
+        "consumes": [
+          "application/json-patch+json",
+          "application/merge-patch+json",
+          "application/strategic-merge-patch+json",
+          "application/apply-patch+yaml"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "remedyKarmadaIo_v1alpha1"
+        ],
+        "operationId": "patchRemedyKarmadaIoV1alpha1Remedy",
+        "parameters": [
+          {
+            "$ref": "#/parameters/body-78PwaGsr"
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
+            "name": "dryRun",
+            "in": "query"
+          },
+          {
+            "$ref": "#/parameters/fieldManager-7c6nTn1T"
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "fieldValidation instructs the server on how to handle objects in the request (POST/PUT/PATCH) containing unknown or duplicate fields. Valid values are: - Ignore: This will ignore any unknown fields that are silently dropped from the object, and will ignore all but the last duplicate field that the decoder encounters. This is the default behavior prior to v1.23. - Warn: This will send a warning via the standard warning response header for each unknown field that is dropped from the object, and for each duplicate field that is encountered. The request will still succeed if there are no other errors, and will only persist the last of any duplicate fields. This is the default in v1.23+ - Strict: This will fail the request with a BadRequest error if any unknown fields would be dropped from the object, or if any duplicate fields are present. The error returned from the server will contain all unknown and duplicate fields encountered.",
+            "name": "fieldValidation",
+            "in": "query"
+          },
+          {
+            "$ref": "#/parameters/force-tOGGb0Yi"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.Remedy"
+            }
+          },
+          "201": {
+            "description": "Created",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.Remedy"
+            }
+          }
+        },
+        "x-kubernetes-action": "patch",
+        "x-kubernetes-group-version-kind": {
+          "group": "remedy.karmada.io",
+          "version": "v1alpha1",
+          "kind": "Remedy"
+        }
+      },
+      "parameters": [
+        {
+          "uniqueItems": true,
+          "type": "string",
+          "description": "name of the Remedy",
+          "name": "name",
+          "in": "path",
+          "required": true
+        },
+        {
+          "$ref": "#/parameters/pretty-tJGM1-ng"
+        }
+      ]
+    },
+    "/apis/remedy.karmada.io/v1alpha1/remedies/{name}/status": {
+      "get": {
+        "description": "read status of the specified Remedy",
+        "consumes": [
+          "*/*"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "remedyKarmadaIo_v1alpha1"
+        ],
+        "operationId": "readRemedyKarmadaIoV1alpha1RemedyStatus",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.Remedy"
+            }
+          }
+        },
+        "x-kubernetes-action": "get",
+        "x-kubernetes-group-version-kind": {
+          "group": "remedy.karmada.io",
+          "version": "v1alpha1",
+          "kind": "Remedy"
+        }
+      },
+      "put": {
+        "description": "replace status of the specified Remedy",
+        "consumes": [
+          "*/*"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "remedyKarmadaIo_v1alpha1"
+        ],
+        "operationId": "replaceRemedyKarmadaIoV1alpha1RemedyStatus",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.Remedy"
+            }
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
+            "name": "dryRun",
+            "in": "query"
+          },
+          {
+            "$ref": "#/parameters/fieldManager-Qy4HdaTW"
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "fieldValidation instructs the server on how to handle objects in the request (POST/PUT/PATCH) containing unknown or duplicate fields. Valid values are: - Ignore: This will ignore any unknown fields that are silently dropped from the object, and will ignore all but the last duplicate field that the decoder encounters. This is the default behavior prior to v1.23. - Warn: This will send a warning via the standard warning response header for each unknown field that is dropped from the object, and for each duplicate field that is encountered. The request will still succeed if there are no other errors, and will only persist the last of any duplicate fields. This is the default in v1.23+ - Strict: This will fail the request with a BadRequest error if any unknown fields would be dropped from the object, or if any duplicate fields are present. The error returned from the server will contain all unknown and duplicate fields encountered.",
+            "name": "fieldValidation",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.Remedy"
+            }
+          },
+          "201": {
+            "description": "Created",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.Remedy"
+            }
+          }
+        },
+        "x-kubernetes-action": "put",
+        "x-kubernetes-group-version-kind": {
+          "group": "remedy.karmada.io",
+          "version": "v1alpha1",
+          "kind": "Remedy"
+        }
+      },
+      "patch": {
+        "description": "partially update status of the specified Remedy",
+        "consumes": [
+          "application/json-patch+json",
+          "application/merge-patch+json",
+          "application/strategic-merge-patch+json",
+          "application/apply-patch+yaml"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "remedyKarmadaIo_v1alpha1"
+        ],
+        "operationId": "patchRemedyKarmadaIoV1alpha1RemedyStatus",
+        "parameters": [
+          {
+            "$ref": "#/parameters/body-78PwaGsr"
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "When present, indicates that modifications should not be persisted. An invalid or unrecognized dryRun directive will result in an error response and no further processing of the request. Valid values are: - All: all dry run stages will be processed",
+            "name": "dryRun",
+            "in": "query"
+          },
+          {
+            "$ref": "#/parameters/fieldManager-7c6nTn1T"
+          },
+          {
+            "uniqueItems": true,
+            "type": "string",
+            "description": "fieldValidation instructs the server on how to handle objects in the request (POST/PUT/PATCH) containing unknown or duplicate fields. Valid values are: - Ignore: This will ignore any unknown fields that are silently dropped from the object, and will ignore all but the last duplicate field that the decoder encounters. This is the default behavior prior to v1.23. - Warn: This will send a warning via the standard warning response header for each unknown field that is dropped from the object, and for each duplicate field that is encountered. The request will still succeed if there are no other errors, and will only persist the last of any duplicate fields. This is the default in v1.23+ - Strict: This will fail the request with a BadRequest error if any unknown fields would be dropped from the object, or if any duplicate fields are present. The error returned from the server will contain all unknown and duplicate fields encountered.",
+            "name": "fieldValidation",
+            "in": "query"
+          },
+          {
+            "$ref": "#/parameters/force-tOGGb0Yi"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.Remedy"
+            }
+          },
+          "201": {
+            "description": "Created",
+            "schema": {
+              "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.Remedy"
+            }
+          }
+        },
+        "x-kubernetes-action": "patch",
+        "x-kubernetes-group-version-kind": {
+          "group": "remedy.karmada.io",
+          "version": "v1alpha1",
+          "kind": "Remedy"
+        }
+      },
+      "parameters": [
+        {
+          "uniqueItems": true,
+          "type": "string",
+          "description": "name of the Remedy",
+          "name": "name",
+          "in": "path",
+          "required": true
+        },
+        {
+          "$ref": "#/parameters/pretty-tJGM1-ng"
+        }
+      ]
+    },
+    "/apis/remedy.karmada.io/v1alpha1/watch/remedies": {
+      "get": {
+        "description": "watch individual changes to a list of Remedy. deprecated: use the 'watch' parameter with a list operation instead.",
+        "consumes": [
+          "*/*"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf",
+          "application/json;stream=watch",
+          "application/vnd.kubernetes.protobuf;stream=watch"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "remedyKarmadaIo_v1alpha1"
+        ],
+        "operationId": "watchRemedyKarmadaIoV1alpha1RemedyList",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
+            }
+          }
+        },
+        "x-kubernetes-action": "watchlist",
+        "x-kubernetes-group-version-kind": {
+          "group": "remedy.karmada.io",
+          "version": "v1alpha1",
+          "kind": "Remedy"
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/parameters/allowWatchBookmarks-HC2hJt-J"
+        },
+        {
+          "$ref": "#/parameters/continue-QfD61s0i"
+        },
+        {
+          "$ref": "#/parameters/fieldSelector-xIcQKXFG"
+        },
+        {
+          "$ref": "#/parameters/labelSelector-5Zw57w4C"
+        },
+        {
+          "$ref": "#/parameters/limit-1NfNmdNH"
+        },
+        {
+          "$ref": "#/parameters/pretty-tJGM1-ng"
+        },
+        {
+          "$ref": "#/parameters/resourceVersion-5WAnf1kx"
+        },
+        {
+          "$ref": "#/parameters/resourceVersionMatch-t8XhRHeC"
+        },
+        {
+          "$ref": "#/parameters/sendInitialEvents-rLXlEK_k"
+        },
+        {
+          "$ref": "#/parameters/timeoutSeconds-yvYezaOC"
+        },
+        {
+          "$ref": "#/parameters/watch-XNNPZGbK"
+        }
+      ]
+    },
+    "/apis/remedy.karmada.io/v1alpha1/watch/remedies/{name}": {
+      "get": {
+        "description": "watch changes to an object of kind Remedy. deprecated: use the 'watch' parameter with a list operation instead, filtered to a single item with the 'fieldSelector' parameter.",
+        "consumes": [
+          "*/*"
+        ],
+        "produces": [
+          "application/json",
+          "application/yaml",
+          "application/vnd.kubernetes.protobuf",
+          "application/json;stream=watch",
+          "application/vnd.kubernetes.protobuf;stream=watch"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "remedyKarmadaIo_v1alpha1"
+        ],
+        "operationId": "watchRemedyKarmadaIoV1alpha1Remedy",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.WatchEvent"
+            }
+          }
+        },
+        "x-kubernetes-action": "watch",
+        "x-kubernetes-group-version-kind": {
+          "group": "remedy.karmada.io",
+          "version": "v1alpha1",
+          "kind": "Remedy"
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/parameters/allowWatchBookmarks-HC2hJt-J"
+        },
+        {
+          "$ref": "#/parameters/continue-QfD61s0i"
+        },
+        {
+          "$ref": "#/parameters/fieldSelector-xIcQKXFG"
+        },
+        {
+          "$ref": "#/parameters/labelSelector-5Zw57w4C"
+        },
+        {
+          "$ref": "#/parameters/limit-1NfNmdNH"
+        },
+        {
+          "uniqueItems": true,
+          "type": "string",
+          "description": "name of the Remedy",
+          "name": "name",
+          "in": "path",
+          "required": true
+        },
+        {
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -11601,7 +13293,7 @@
       },
       "parameters": [
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -11838,7 +13530,7 @@
           "required": true
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -12016,7 +13708,7 @@
           "required": true
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -12072,7 +13764,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -12151,7 +13843,7 @@
           "required": true
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -12450,7 +14142,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -12690,7 +14382,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -12871,7 +14563,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -12930,7 +14622,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -13012,7 +14704,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -13083,7 +14775,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -13154,7 +14846,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -13420,7 +15112,7 @@
       },
       "parameters": [
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -13657,7 +15349,7 @@
           "required": true
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -13835,7 +15527,7 @@
           "required": true
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -14059,7 +15751,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -14299,7 +15991,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -14480,7 +16172,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         }
       ]
     },
@@ -14536,7 +16228,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -14607,7 +16299,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -14686,7 +16378,7 @@
           "required": true
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -14760,7 +16452,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -14842,7 +16534,7 @@
           "$ref": "#/parameters/namespace-vgWSWtn3"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -14913,7 +16605,7 @@
           "$ref": "#/parameters/limit-1NfNmdNH"
         },
         {
-          "$ref": "#/parameters/pretty-nN7o5FEq"
+          "$ref": "#/parameters/pretty-tJGM1-ng"
         },
         {
           "$ref": "#/parameters/resourceVersion-5WAnf1kx"
@@ -14931,9 +16623,206 @@
           "$ref": "#/parameters/watch-XNNPZGbK"
         }
       ]
+    },
+    "/version/": {
+      "get": {
+        "description": "get the code version",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "tags": [
+          "version"
+        ],
+        "operationId": "getCodeVersion",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/io.k8s.apimachinery.pkg.version.Info"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
+    "com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.ObjectReference": {
+      "description": "ObjectReference the expected resource.",
+      "type": "object",
+      "required": [
+        "apiVersion",
+        "kind",
+        "name"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion represents the API version of the target resource.",
+          "type": "string",
+          "default": ""
+        },
+        "kind": {
+          "description": "Kind represents the Kind of the target resource.",
+          "type": "string",
+          "default": ""
+        },
+        "name": {
+          "description": "Name of the target resource.",
+          "type": "string",
+          "default": ""
+        },
+        "namespace": {
+          "description": "Namespace of the target resource. Default is empty, which means it is a non-namespacescoped resource.",
+          "type": "string"
+        }
+      }
+    },
+    "com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.ObservedWorkload": {
+      "description": "ObservedWorkload the observed resource.",
+      "type": "object",
+      "required": [
+        "workload"
+      ],
+      "properties": {
+        "reason": {
+          "description": "Reason represents a machine-readable description of why this resource rebalanced failed.",
+          "type": "string"
+        },
+        "result": {
+          "description": "Result the observed rebalance result of resource.",
+          "type": "string"
+        },
+        "workload": {
+          "description": "Workload the observed resource.",
+          "default": {},
+          "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.ObjectReference"
+        }
+      }
+    },
+    "com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancer": {
+      "description": "WorkloadRebalancer represents the desired behavior and status of a job which can enforces a resource rebalance.",
+      "type": "object",
+      "required": [
+        "spec"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
+        },
+        "spec": {
+          "description": "Spec represents the specification of the desired behavior of WorkloadRebalancer.",
+          "default": {},
+          "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancerSpec"
+        },
+        "status": {
+          "description": "Status represents the status of WorkloadRebalancer.",
+          "default": {},
+          "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancerStatus"
+        }
+      },
+      "x-kubernetes-group-version-kind": [
+        {
+          "group": "apps.karmada.io",
+          "kind": "WorkloadRebalancer",
+          "version": "v1alpha1"
+        }
+      ]
+    },
+    "com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancerList": {
+      "description": "WorkloadRebalancerList contains a list of WorkloadRebalancer",
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "items": {
+          "description": "Items holds a list of WorkloadRebalancer.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancer"
+          }
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta"
+        }
+      },
+      "x-kubernetes-group-version-kind": [
+        {
+          "group": "apps.karmada.io",
+          "kind": "WorkloadRebalancerList",
+          "version": "v1alpha1"
+        }
+      ]
+    },
+    "com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancerSpec": {
+      "description": "WorkloadRebalancerSpec represents the specification of the desired behavior of Reschedule.",
+      "type": "object",
+      "required": [
+        "workloads"
+      ],
+      "properties": {
+        "ttlSecondsAfterFinished": {
+          "description": "TTLSecondsAfterFinished limits the lifetime of a WorkloadRebalancer that has finished execution (means each target workload is finished with result of Successful or Failed). If this field is set, ttlSecondsAfterFinished after the WorkloadRebalancer finishes, it is eligible to be automatically deleted. If this field is unset, the WorkloadRebalancer won't be automatically deleted. If this field is set to zero, the WorkloadRebalancer becomes eligible to be deleted immediately after it finishes.",
+          "type": "integer",
+          "format": "int32"
+        },
+        "workloads": {
+          "description": "Workloads used to specify the list of expected resource. Nil or empty list is not allowed.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.ObjectReference"
+          }
+        }
+      }
+    },
+    "com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.WorkloadRebalancerStatus": {
+      "description": "WorkloadRebalancerStatus contains information about the current status of a WorkloadRebalancer updated periodically by schedule trigger controller.",
+      "type": "object",
+      "properties": {
+        "finishTime": {
+          "description": "FinishTime represents the finish time of rebalancer.",
+          "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time"
+        },
+        "observedGeneration": {
+          "description": "ObservedGeneration is the generation(.metadata.generation) observed by the controller. If ObservedGeneration is less than the generation in metadata means the controller hasn't confirmed the rebalance result or hasn't done the rebalance yet.",
+          "type": "integer",
+          "format": "int64"
+        },
+        "observedWorkloads": {
+          "description": "ObservedWorkloads contains information about the execution states and messages of target resources.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.apps.v1alpha1.ObservedWorkload"
+          }
+        }
+      }
+    },
     "com.github.karmada-io.karmada.pkg.apis.autoscaling.v1alpha1.CronFederatedHPA": {
       "description": "CronFederatedHPA represents a collection of repeating schedule to scale replica number of a specific workload. It can scale any resource implementing the scale subresource as well as FederatedHPA.",
       "type": "object",
@@ -15364,7 +17253,7 @@
       }
     },
     "com.github.karmada-io.karmada.pkg.apis.cluster.v1alpha1.Cluster": {
-      "description": "Cluster represents the desire state and status of a member cluster.",
+      "description": "Cluster represents the desired state and status of a member cluster.",
       "type": "object",
       "required": [
         "spec"
@@ -15402,7 +17291,7 @@
       ]
     },
     "com.github.karmada-io.karmada.pkg.apis.cluster.v1alpha1.ClusterList": {
-      "description": "ClusterList contains a list of member cluster",
+      "description": "ClusterList contains a list of member clusters",
       "type": "object",
       "required": [
         "items"
@@ -15449,11 +17338,11 @@
           "type": "string"
         },
         "id": {
-          "description": "ID is the unique identifier for the cluster. It is different from the object uid(.metadata.uid) and typically collected automatically from member cluster during the progress of registration.\n\nThe value is collected in order: 1. If the registering cluster enabled ClusterProperty API and defined the cluster ID by\n  creating a ClusterProperty object with name 'cluster.clusterset.k8s.io', Karmada would\n  take the defined value in the ClusterProperty object.\n  See https://github.com/kubernetes-sigs/about-api for more details about ClusterProperty API.\n2. Take the uid of 'kube-system' namespace on the registering cluster.\n\nPlease don't update this value unless you know what you are doing, because it will/may be used to : - uniquely identify the clusters within the Karmada system. - compose the DNS name of multi-cluster services.",
+          "description": "ID is the unique identifier for the cluster. It is different from the object uid(.metadata.uid) and is typically collected automatically from each member cluster during the process of registration.\n\nThe value is collected in order: 1. If the registering cluster enabled ClusterProperty API and defined the cluster ID by\n  creating a ClusterProperty object with name 'cluster.clusterset.k8s.io', Karmada would\n  take the defined value in the ClusterProperty object.\n  See https://github.com/kubernetes-sigs/about-api for more details about ClusterProperty API.\n2. Take the uid of 'kube-system' namespace on the registering cluster.\n\nPlease don't update this value unless you know what you are doing, because it will/may be used to : - uniquely identify the clusters within the Karmada system. - compose the DNS name of multi-cluster services.",
           "type": "string"
         },
         "impersonatorSecretRef": {
-          "description": "ImpersonatorSecretRef represents the secret contains the token of impersonator. The secret should hold credentials as follows: - secret.data.token",
+          "description": "ImpersonatorSecretRef represents the secret that contains the token of impersonator. The secret should hold credentials as follows: - secret.data.token",
           "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.cluster.v1alpha1.LocalSecretReference"
         },
         "insecureSkipTLSVerification": {
@@ -15465,7 +17354,7 @@
           "type": "string"
         },
         "proxyHeader": {
-          "description": "ProxyHeader is the HTTP header required by proxy server. The key in the key-value pair is HTTP header key and value is the associated header payloads. For the header with multiple values, the values should be separated by comma(e.g. 'k1': 'v1,v2,v3').",
+          "description": "ProxyHeader is the HTTP header required by proxy server. The key in the key-value pair is HTTP header key and the value is the associated header payloads. For the header with multiple values, the values should be separated by comma(e.g. 'k1': 'v1,v2,v3').",
           "type": "object",
           "additionalProperties": {
             "type": "string",
@@ -15473,11 +17362,11 @@
           }
         },
         "proxyURL": {
-          "description": "ProxyURL is the proxy URL for the cluster. If not empty, the karmada control plane will use this proxy to talk to the cluster. More details please refer to: https://github.com/kubernetes/client-go/issues/351",
+          "description": "ProxyURL is the proxy URL for the cluster. If not empty, the karmada control plane will use this proxy to talk to the cluster. For more details please refer to: https://github.com/kubernetes/client-go/issues/351",
           "type": "string"
         },
         "region": {
-          "description": "Region represents the region of the member cluster locate in.",
+          "description": "Region represents the region in which the member cluster is located.",
           "type": "string"
         },
         "resourceModels": {
@@ -15489,16 +17378,16 @@
           }
         },
         "secretRef": {
-          "description": "SecretRef represents the secret contains mandatory credentials to access the member cluster. The secret should hold credentials as follows: - secret.data.token - secret.data.caBundle",
+          "description": "SecretRef represents the secret that contains mandatory credentials to access the member cluster. The secret should hold credentials as follows: - secret.data.token - secret.data.caBundle",
           "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.cluster.v1alpha1.LocalSecretReference"
         },
         "syncMode": {
-          "description": "SyncMode describes how a cluster sync resources from karmada control plane.",
+          "description": "SyncMode describes how a cluster syncs resources from karmada control plane.",
           "type": "string",
           "default": ""
         },
         "taints": {
-          "description": "Taints attached to the member cluster. Taints on the cluster have the \"effect\" on any resource that does not tolerate the Taint.",
+          "description": "Taints are attached to the member cluster. Taints on the cluster have the \"effect\" on any resource that does not tolerate the Taint.",
           "type": "array",
           "items": {
             "default": {},
@@ -15506,7 +17395,7 @@
           }
         },
         "zone": {
-          "description": "Zone represents the zone of the member cluster locate in. Deprecated: This filed was never been used by Karmada, and it will not be removed from v1alpha1 for backward compatibility, use Zones instead.",
+          "description": "Zone represents the zone in which the member cluster is located. Deprecated: This field was never been used by Karmada, and it will not be removed from v1alpha1 for backward compatibility, use Zones instead.",
           "type": "string"
         },
         "zones": {
@@ -15524,7 +17413,7 @@
       "type": "object",
       "properties": {
         "apiEnablements": {
-          "description": "APIEnablements represents the list of APIs installed in the member cluster.",
+          "description": "APIEnablements represents the list of APIs installed on the member cluster.",
           "type": "array",
           "items": {
             "default": {},
@@ -15547,6 +17436,14 @@
           "description": "NodeSummary represents the summary of nodes status in the member cluster.",
           "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.cluster.v1alpha1.NodeSummary"
         },
+        "remedyActions": {
+          "description": "RemedyActions represents the remedy actions that needs to be performed on the cluster.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        },
         "resourceSummary": {
           "description": "ResourceSummary represents the summary of resources in the member cluster.",
           "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.cluster.v1alpha1.ResourceSummary"
@@ -15562,7 +17459,7 @@
       ],
       "properties": {
         "name": {
-          "description": "Name is the name of resource being referenced.",
+          "description": "Name is the name of the resource being referenced.",
           "type": "string",
           "default": ""
         },
@@ -15614,7 +17511,7 @@
       }
     },
     "com.github.karmada-io.karmada.pkg.apis.cluster.v1alpha1.ResourceModelRange": {
-      "description": "ResourceModelRange describes the detail of each modeling quota that ranges from min to max. Please pay attention, by default, the value of min can be inclusive, and the value of max cannot be inclusive. E.g. in an interval, min = 2, max =10 is set, which means the interval [2,10). This rule ensure that all intervals have the same meaning. If the last interval is infinite, it is definitely unreachable. Therefore, we define the right interval as the open interval. For a valid interval, the value on the right is greater than the value on the left, in other words, max must be greater than min. It is strongly recommended that the [Min, Max) of all ResourceModelRanges can make a continuous interval.",
+      "description": "ResourceModelRange describes the detail of each modeling quota that ranges from min to max. Please pay attention, by default, the value of min can be inclusive, and the value of max cannot be inclusive. E.g. in an interval, min = 2, max = 10 is set, which means the interval [2,10). This rule ensures that all intervals have the same meaning. If the last interval is infinite, it is definitely unreachable. Therefore, we define the right interval as the open interval. For a valid interval, the value on the right is greater than the value on the left, in other words, max must be greater than min. It is strongly recommended that the [Min, Max) of all ResourceModelRanges can make a continuous interval.",
       "type": "object",
       "required": [
         "name",
@@ -15624,12 +17521,10 @@
       "properties": {
         "max": {
           "description": "Max is the maximum amount of this resource represented by resource name. Special Instructions, for the last ResourceModelRange, which no matter what Max value you pass, the meaning is infinite. Because for the last item, any ResourceModelRange's quota larger than Min will be classified to the last one. Of course, the value of the Max field is always greater than the value of the Min field. It should be true in any case.",
-          "default": {},
           "$ref": "#/definitions/io.k8s.apimachinery.pkg.api.resource.Quantity"
         },
         "min": {
           "description": "Min is the minimum amount of this resource represented by resource name. Note: The Min value of first grade(usually 0) always acts as zero. E.g. [1,2) equal to [0,2).",
-          "default": {},
           "$ref": "#/definitions/io.k8s.apimachinery.pkg.api.resource.Quantity"
         },
         "name": {
@@ -15647,7 +17542,6 @@
           "description": "Allocatable represents the resources of a cluster that are available for scheduling. Total amount of allocatable resources on all nodes.",
           "type": "object",
           "additionalProperties": {
-            "default": {},
             "$ref": "#/definitions/io.k8s.apimachinery.pkg.api.resource.Quantity"
           }
         },
@@ -15663,7 +17557,6 @@
           "description": "Allocated represents the resources of a cluster that have been scheduled. Total amount of required resources of all Pods that have been scheduled to nodes.",
           "type": "object",
           "additionalProperties": {
-            "default": {},
             "$ref": "#/definitions/io.k8s.apimachinery.pkg.api.resource.Quantity"
           }
         },
@@ -15671,7 +17564,6 @@
           "description": "Allocating represents the resources of a cluster that are pending for scheduling. Total amount of required resources of all Pods that are waiting for scheduling.",
           "type": "object",
           "additionalProperties": {
-            "default": {},
             "$ref": "#/definitions/io.k8s.apimachinery.pkg.api.resource.Quantity"
           }
         }
@@ -15739,7 +17631,7 @@
       ],
       "properties": {
         "luaScript": {
-          "description": "LuaScript holds the Lua script that is used to interpret the dependencies of a specific resource. The script should implement a function as follows:\n\n```\n  luaScript: \u003e\n      function GetDependencies(desiredObj)\n          dependencies = {}\n          if desiredObj.spec.serviceAccountName ~= nil and desiredObj.spec.serviceAccountName ~= \"default\" then\n              dependency = {}\n              dependency.apiVersion = \"v1\"\n              dependency.kind = \"ServiceAccount\"\n              dependency.name = desiredObj.spec.serviceAccountName\n              dependency.namespace = desiredObj.namespace\n              dependencies[1] = {}\n              dependencies[1] = dependency\n          end\n          return dependencies\n      end\n```\n\nThe content of the LuaScript needs to be a whole function including both declaration and implementation.\n\nThe parameters will be supplied by the system:\n  - desiredObj: the object represents the configuration to be applied\n      to the member cluster.\n\nThe returned value should be expressed by a slice of DependentObjectReference.",
+          "description": "LuaScript holds the Lua script that is used to interpret the dependencies of a specific resource. The script should implement a function as follows:\n\n```\n  luaScript: \u003e\n      function GetDependencies(desiredObj)\n          dependencies = {}\n          serviceAccountName = desiredObj.spec.template.spec.serviceAccountName\n          if serviceAccountName ~= nil and serviceAccountName ~= \"default\" then\n              dependency = {}\n              dependency.apiVersion = \"v1\"\n              dependency.kind = \"ServiceAccount\"\n              dependency.name = serviceAccountName\n              dependency.namespace = desiredObj.metadata.namespace\n              dependencies[1] = dependency\n          end\n          return dependencies\n      end\n```\n\nThe content of the LuaScript needs to be a whole function including both declaration and implementation.\n\nThe parameters will be supplied by the system:\n  - desiredObj: the object represents the configuration to be applied\n      to the member cluster.\n\nThe returned value should be expressed by a slice of DependentObjectReference.",
           "type": "string",
           "default": ""
         }
@@ -15899,7 +17791,7 @@
       ],
       "properties": {
         "clientConfig": {
-          "description": "ClientConfig defines how to communicate with the hook.",
+          "description": "ClientConfig defines how to communicate with the hook. It supports two mutually exclusive configuration modes:\n\n1. URL - Directly specify the webhook URL with format `scheme://host:port/path`.\n   Example: https://webhook.example.com:8443/my-interpreter\n\n2. Service - Reference a Kubernetes Service that exposes the webhook.\n   When using Service reference, Karmada resolves the endpoint through following steps:\n   a) First attempts to locate the Service in karmada-apiserver\n   b) If found, constructs URL based on Service type:\n      - ClusterIP/LoadBalancer/NodePort: Uses ClusterIP with port from Service spec\n        (Note: Services with ClusterIP \"None\" are rejected), Example:\n        `https://\u003ccluster ip\u003e:\u003cport\u003e`\n      - ExternalName: Uses external DNS name format: `https://\u003cexternal name\u003e:\u003cport\u003e`\n   c) If NOT found in karmada-apiserver, falls back to standard Kubernetes\n      service DNS name format: `https://\u003cservice\u003e.\u003cnamespace\u003e.svc:\u003cport\u003e`\n\nNote: When both URL and Service are specified, the Service reference takes precedence\n      and the URL configuration will be ignored.",
           "default": {},
           "$ref": "#/definitions/io.k8s.api.admissionregistration.v1.WebhookClientConfig"
         },
@@ -16078,6 +17970,9 @@
     "com.github.karmada-io.karmada.pkg.apis.networking.v1alpha1.ClusterSelector": {
       "description": "ClusterSelector specifies the cluster to be selected.",
       "type": "object",
+      "required": [
+        "name"
+      ],
       "properties": {
         "name": {
           "description": "Name is the name of the cluster to be selected.",
@@ -16142,7 +18037,7 @@
         "status": {
           "description": "Status is the current state of the MultiClusterIngress.",
           "default": {},
-          "$ref": "#/definitions/io.k8s.api.networking.v1.IngressStatus"
+          "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.networking.v1alpha1.MultiClusterIngressStatus"
         }
       },
       "x-kubernetes-group-version-kind": [
@@ -16188,6 +18083,33 @@
           "version": "v1alpha1"
         }
       ]
+    },
+    "com.github.karmada-io.karmada.pkg.apis.networking.v1alpha1.MultiClusterIngressStatus": {
+      "description": "MultiClusterIngressStatus is the current state of the MultiClusterIngress.",
+      "type": "object",
+      "properties": {
+        "loadBalancer": {
+          "description": "loadBalancer contains the current status of the load-balancer.",
+          "default": {},
+          "$ref": "#/definitions/io.k8s.api.networking.v1.IngressLoadBalancerStatus"
+        },
+        "serviceLocations": {
+          "description": "ServiceLocations records the locations of MulticlusterIngress's backend Service resources. It will be set by the system controller.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.networking.v1alpha1.ServiceLocation"
+          }
+        },
+        "trafficBlockClusters": {
+          "description": "TrafficBlockClusters records the cluster name list that needs to perform traffic block. When the cloud provider implements its multicluster-cloud-provider and refreshes the service backend address to the LoadBalancer Service, it needs to filter out the backend addresses in these clusters.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        }
+      }
     },
     "com.github.karmada-io.karmada.pkg.apis.networking.v1alpha1.MultiClusterService": {
       "description": "MultiClusterService is a named abstraction of multi-cluster software service. The name field of MultiClusterService is the same as that of Service name. Services with the same name in different clusters are regarded as the same service and are associated with the same MultiClusterService. MultiClusterService can control the exposure of services to outside multiple clusters, and also enable service discovery between clusters.",
@@ -16325,6 +18247,28 @@
         }
       }
     },
+    "com.github.karmada-io.karmada.pkg.apis.networking.v1alpha1.ServiceLocation": {
+      "description": "ServiceLocation records the locations of MulticlusterIngress's backend Service resources.",
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "clusters": {
+          "description": "Clusters records the cluster list where the Service is located.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "name": {
+          "description": "name is the referenced service. The service must exist in the same namespace as the MultiClusterService object.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
     "com.github.karmada-io.karmada.pkg.apis.policy.v1alpha1.ApplicationFailoverBehavior": {
       "description": "ApplicationFailoverBehavior indicates application failover behaviors.",
       "type": "object",
@@ -16345,6 +18289,10 @@
         "purgeMode": {
           "description": "PurgeMode represents how to deal with the legacy applications on the cluster from which the application is migrated. Valid options are \"Immediately\", \"Graciously\" and \"Never\". Defaults to \"Graciously\".",
           "type": "string"
+        },
+        "statePreservation": {
+          "description": "StatePreservation defines the policy for preserving and restoring state data during failover events for stateful applications.\n\nWhen an application fails over from one cluster to another, this policy enables the extraction of critical data from the original resource configuration. Upon successful migration, the extracted data is then re-injected into the new resource, ensuring that the application can resume operation with its previous state intact. This is particularly useful for stateful applications where maintaining data consistency across failover events is crucial. If not specified, means no state data will be preserved.\n\nNote: This requires the StatefulFailoverInjection feature gate to be enabled, which is alpha.",
+          "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.policy.v1alpha1.StatePreservation"
         }
       }
     },
@@ -16587,7 +18535,6 @@
           "description": "Hard is the set of enforced hard limits for each named resource. More info: https://kubernetes.io/docs/concepts/policy/resource-quotas/",
           "type": "object",
           "additionalProperties": {
-            "default": {},
             "$ref": "#/definitions/io.k8s.apimachinery.pkg.api.resource.Quantity"
           }
         },
@@ -16595,7 +18542,6 @@
           "description": "Used is the current observed total usage of the resource in the namespace.",
           "type": "object",
           "additionalProperties": {
-            "default": {},
             "$ref": "#/definitions/io.k8s.apimachinery.pkg.api.resource.Quantity"
           }
         }
@@ -16734,7 +18680,6 @@
           "description": "Overall is the set of desired hard limits for each named resource.",
           "type": "object",
           "additionalProperties": {
-            "default": {},
             "$ref": "#/definitions/io.k8s.apimachinery.pkg.api.resource.Quantity"
           }
         },
@@ -16764,7 +18709,6 @@
           "description": "Overall is the set of enforced hard limits for each named resource.",
           "type": "object",
           "additionalProperties": {
-            "default": {},
             "$ref": "#/definitions/io.k8s.apimachinery.pkg.api.resource.Quantity"
           }
         },
@@ -16772,8 +18716,37 @@
           "description": "OverallUsed is the current observed total usage of the resource in the namespace.",
           "type": "object",
           "additionalProperties": {
-            "default": {},
             "$ref": "#/definitions/io.k8s.apimachinery.pkg.api.resource.Quantity"
+          }
+        }
+      }
+    },
+    "com.github.karmada-io.karmada.pkg.apis.policy.v1alpha1.FieldOverrider": {
+      "description": "FieldOverrider represents the rules dedicated to modifying a specific field in any Kubernetes resource. This allows changing a single field within the resource with multiple operations. It is designed to handle structured field values such as those found in ConfigMaps or Secrets. The current implementation supports JSON and YAML formats, but can easily be extended to support XML in the future. Note: In any given instance, FieldOverrider processes either JSON or YAML fields, but not both simultaneously.",
+      "type": "object",
+      "required": [
+        "fieldPath"
+      ],
+      "properties": {
+        "fieldPath": {
+          "description": "FieldPath specifies the initial location in the instance document where the operation should take place. The path uses RFC 6901 for navigating into nested structures. For example, the path \"/data/db-config.yaml\" specifies the configuration data key named \"db-config.yaml\" in a ConfigMap: \"/data/db-config.yaml\".",
+          "type": "string",
+          "default": ""
+        },
+        "json": {
+          "description": "JSON represents the operations performed on the JSON document specified by the FieldPath.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.policy.v1alpha1.JSONPatchOperation"
+          }
+        },
+        "yaml": {
+          "description": "YAML represents the operations performed on the YAML document specified by the FieldPath.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.policy.v1alpha1.YAMLPatchOperation"
           }
         }
       }
@@ -16834,11 +18807,36 @@
         }
       }
     },
+    "com.github.karmada-io.karmada.pkg.apis.policy.v1alpha1.JSONPatchOperation": {
+      "description": "JSONPatchOperation represents a single field modification operation for JSON format.",
+      "type": "object",
+      "required": [
+        "subPath",
+        "operator"
+      ],
+      "properties": {
+        "operator": {
+          "description": "Operator indicates the operation on target field. Available operators are: \"add\", \"remove\", and \"replace\".",
+          "type": "string",
+          "default": ""
+        },
+        "subPath": {
+          "description": "SubPath specifies the relative location within the initial FieldPath where the operation should take place. The path uses RFC 6901 for navigating into nested structures.",
+          "type": "string",
+          "default": ""
+        },
+        "value": {
+          "description": "Value is the new value to set for the specified field if the operation is \"add\" or \"replace\". For \"remove\" operation, this field is ignored.",
+          "$ref": "#/definitions/io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1.JSON"
+        }
+      }
+    },
     "com.github.karmada-io.karmada.pkg.apis.policy.v1alpha1.LabelAnnotationOverrider": {
       "description": "LabelAnnotationOverrider represents the rules dedicated to handling workload labels/annotations",
       "type": "object",
       "required": [
-        "operator"
+        "operator",
+        "value"
       ],
       "properties": {
         "operator": {
@@ -16957,7 +18955,7 @@
       }
     },
     "com.github.karmada-io.karmada.pkg.apis.policy.v1alpha1.Overriders": {
-      "description": "Overriders offers various alternatives to represent the override rules.\n\nIf more than one alternative exists, they will be applied with following order: - ImageOverrider - CommandOverrider - ArgsOverrider - LabelsOverrider - AnnotationsOverrider - Plaintext",
+      "description": "Overriders offers various alternatives to represent the override rules.\n\nIf more than one alternative exists, they will be applied with following order: - ImageOverrider - CommandOverrider - ArgsOverrider - LabelsOverrider - AnnotationsOverrider - FieldOverrider - Plaintext",
       "type": "object",
       "properties": {
         "annotationsOverrider": {
@@ -16982,6 +18980,14 @@
           "items": {
             "default": {},
             "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.policy.v1alpha1.CommandArgsOverrider"
+          }
+        },
+        "fieldOverrider": {
+          "description": "FieldOverrider represents the rules dedicated to modifying a specific field in any Kubernetes resource. This allows changing a single field within the resource with multiple operations. It is designed to handle structured field values such as those found in ConfigMaps or Secrets. The current implementation supports JSON and YAML formats, but can easily be extended to support XML in the future.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.policy.v1alpha1.FieldOverrider"
           }
         },
         "imageOverrider": {
@@ -17068,7 +19074,6 @@
         },
         "value": {
           "description": "Value to be applied to target field. Must be empty when operator is Remove.",
-          "default": {},
           "$ref": "#/definitions/io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1.JSON"
         }
       }
@@ -17148,6 +19153,10 @@
         "resourceSelectors"
       ],
       "properties": {
+        "activationPreference": {
+          "description": "ActivationPreference indicates how the referencing resource template will be propagated, in case of policy changes.\n\nIf empty, the resource template will respond to policy changes immediately, in other words, any policy changes will drive the resource template to be propagated immediately as per the current propagation rules.\n\nIf the value is 'Lazy' means the policy changes will not take effect for now but defer to the resource template changes, in other words, the resource template will not be propagated as per the current propagation rules until there is an update on it. This is an experimental feature that might help in a scenario where a policy manages huge amount of resource templates, changes to a policy typically affect numerous applications simultaneously. A minor misconfiguration could lead to widespread failures. With this feature, the change can be gradually rolled out through iterative modifications of resource templates.",
+          "type": "string"
+        },
         "association": {
           "description": "Association tells if relevant resources should be selected automatically. e.g. a ConfigMap referred by a Deployment. default false. Deprecated: in favor of PropagateDeps.",
           "type": "boolean"
@@ -17181,6 +19190,10 @@
             "Never"
           ]
         },
+        "preserveResourcesOnDeletion": {
+          "description": "PreserveResourcesOnDeletion controls whether resources should be preserved on the member clusters when the resource template is deleted. If set to true, resources will be preserved on the member clusters. Default is false, which means resources will be deleted along with the resource template.\n\nThis setting is particularly useful during workload migration scenarios to ensure that rollback can occur quickly without affecting the workloads running on the member clusters.\n\nAdditionally, this setting applies uniformly across all member clusters and will not selectively control preservation on only some clusters.\n\nNote: This setting does not apply to the deletion of the policy itself. When the policy is deleted, the resource templates and their corresponding propagated resources in member clusters will remain unchanged unless explicitly deleted.",
+          "type": "boolean"
+        },
         "priority": {
           "description": "Priority indicates the importance of a policy(PropagationPolicy or ClusterPropagationPolicy). A policy will be applied for the matched resource templates if there is no other policies with higher priority at the point of the resource template be processed. Once a resource template has been claimed by a policy, by default it will not be preempted by following policies even with a higher priority. See Preemption for more details.\n\nIn case of two policies have the same priority, the one with a more precise matching rules in ResourceSelectors wins: - matching by name(resourceSelector.name) has higher priority than\n  by selector(resourceSelector.labelSelector)\n- matching by selector(resourceSelector.labelSelector) has higher priority\n  than by APIVersion(resourceSelector.apiVersion) and Kind(resourceSelector.kind).\nIf there is still no winner at this point, the one with the lower alphabetic order wins, e.g. policy 'bar' has higher priority than 'foo'.\n\nThe higher the value, the higher the priority. Defaults to zero.",
           "type": "integer",
@@ -17201,6 +19214,10 @@
         "schedulerName": {
           "description": "SchedulerName represents which scheduler to proceed the scheduling. If specified, the policy will be dispatched by specified scheduler. If not specified, the policy will be dispatched by default scheduler.",
           "type": "string"
+        },
+        "suspension": {
+          "description": "Suspension declares the policy for suspending different aspects of propagation. nil means no suspension. no default values.",
+          "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.policy.v1alpha1.Suspension"
         }
       }
     },
@@ -17296,6 +19313,43 @@
         }
       }
     },
+    "com.github.karmada-io.karmada.pkg.apis.policy.v1alpha1.StatePreservation": {
+      "description": "StatePreservation defines the policy for preserving state during failover events.",
+      "type": "object",
+      "required": [
+        "rules"
+      ],
+      "properties": {
+        "rules": {
+          "description": "Rules contains a list of StatePreservationRule configurations. Each rule specifies a JSONPath expression targeting specific pieces of state data to be preserved during failover events. An AliasLabelName is associated with each rule, serving as a label key when the preserved data is passed to the new cluster.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.policy.v1alpha1.StatePreservationRule"
+          }
+        }
+      }
+    },
+    "com.github.karmada-io.karmada.pkg.apis.policy.v1alpha1.StatePreservationRule": {
+      "description": "StatePreservationRule defines a single rule for state preservation. It includes a JSONPath expression and an alias name that will be used as a label key when passing state information to the new cluster.",
+      "type": "object",
+      "required": [
+        "aliasLabelName",
+        "jsonPath"
+      ],
+      "properties": {
+        "aliasLabelName": {
+          "description": "AliasLabelName is the name that will be used as a label key when the preserved data is passed to the new cluster. This facilitates the injection of the preserved state back into the application resources during recovery.",
+          "type": "string",
+          "default": ""
+        },
+        "jsonPath": {
+          "description": "JSONPath is the JSONPath template used to identify the state data to be preserved from the original resource configuration. The JSONPath syntax follows the Kubernetes specification: https://kubernetes.io/docs/reference/kubectl/jsonpath/\n\nNote: The JSONPath expression will start searching from the \"status\" field of the API resource object by default. For example, to extract the \"availableReplicas\" from a Deployment, the JSONPath expression should be \"{.availableReplicas}\", not \"{.status.availableReplicas}\".",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
     "com.github.karmada-io.karmada.pkg.apis.policy.v1alpha1.StaticClusterAssignment": {
       "description": "StaticClusterAssignment represents the set of desired hard limits for a specific cluster.",
       "type": "object",
@@ -17313,7 +19367,6 @@
           "description": "Hard is the set of desired hard limits for each named resource.",
           "type": "object",
           "additionalProperties": {
-            "default": {},
             "$ref": "#/definitions/io.k8s.apimachinery.pkg.api.resource.Quantity"
           }
         }
@@ -17340,6 +19393,202 @@
         }
       }
     },
+    "com.github.karmada-io.karmada.pkg.apis.policy.v1alpha1.SuspendClusters": {
+      "description": "SuspendClusters represents a group of clusters that should be suspended from propagating. Note: No plan to introduce the label selector or field selector to select clusters yet, as it would make the system unpredictable.",
+      "type": "object",
+      "properties": {
+        "clusterNames": {
+          "description": "ClusterNames is the list of clusters to be selected.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        }
+      }
+    },
+    "com.github.karmada-io.karmada.pkg.apis.policy.v1alpha1.Suspension": {
+      "description": "Suspension defines the policy for suspending different aspects of propagation.",
+      "type": "object",
+      "properties": {
+        "dispatching": {
+          "description": "Dispatching controls whether dispatching should be suspended. nil means not suspend, no default value, only accepts 'true'. Note: true means stop propagating to all clusters. Can not co-exist with DispatchingOnClusters which is used to suspend particular clusters.",
+          "type": "boolean"
+        },
+        "dispatchingOnClusters": {
+          "description": "DispatchingOnClusters declares a list of clusters to which the dispatching should be suspended. Note: Can not co-exist with Dispatching which is used to suspend all.",
+          "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.policy.v1alpha1.SuspendClusters"
+        }
+      }
+    },
+    "com.github.karmada-io.karmada.pkg.apis.policy.v1alpha1.YAMLPatchOperation": {
+      "description": "YAMLPatchOperation represents a single field modification operation for YAML format.",
+      "type": "object",
+      "required": [
+        "subPath",
+        "operator"
+      ],
+      "properties": {
+        "operator": {
+          "description": "Operator indicates the operation on target field. Available operators are: \"add\", \"remove\", and \"replace\".",
+          "type": "string",
+          "default": ""
+        },
+        "subPath": {
+          "description": "SubPath specifies the relative location within the initial FieldPath where the operation should take place. The path uses RFC 6901 for navigating into nested structures.",
+          "type": "string",
+          "default": ""
+        },
+        "value": {
+          "description": "Value is the new value to set for the specified field if the operation is \"add\" or \"replace\". For \"remove\" operation, this field is ignored.",
+          "$ref": "#/definitions/io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1.JSON"
+        }
+      }
+    },
+    "com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.ClusterAffinity": {
+      "description": "ClusterAffinity represents the filter to select clusters.",
+      "type": "object",
+      "properties": {
+        "clusterNames": {
+          "description": "ClusterNames is the list of clusters to be selected.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        }
+      }
+    },
+    "com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.ClusterConditionRequirement": {
+      "description": "ClusterConditionRequirement describes the Cluster condition requirement details.",
+      "type": "object",
+      "required": [
+        "conditionType",
+        "operator",
+        "conditionStatus"
+      ],
+      "properties": {
+        "conditionStatus": {
+          "description": "ConditionStatus specifies the ClusterStatue condition status.",
+          "type": "string",
+          "default": ""
+        },
+        "conditionType": {
+          "description": "ConditionType specifies the ClusterStatus condition type.",
+          "type": "string",
+          "default": ""
+        },
+        "operator": {
+          "description": "Operator represents a conditionType's relationship to a conditionStatus. Valid operators are Equal, NotEqual.",
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.DecisionMatch": {
+      "description": "DecisionMatch represents the decision match detail of activating the remedy system.",
+      "type": "object",
+      "properties": {
+        "clusterConditionMatch": {
+          "description": "ClusterConditionMatch describes the cluster condition requirement.",
+          "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.ClusterConditionRequirement"
+        }
+      }
+    },
+    "com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.Remedy": {
+      "description": "Remedy represents the cluster-level management strategies based on cluster conditions.",
+      "type": "object",
+      "required": [
+        "spec"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
+        },
+        "spec": {
+          "description": "Spec represents the desired behavior of Remedy.",
+          "default": {},
+          "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.RemedySpec"
+        }
+      },
+      "x-kubernetes-group-version-kind": [
+        {
+          "group": "remedy.karmada.io",
+          "kind": "Remedy",
+          "version": "v1alpha1"
+        }
+      ]
+    },
+    "com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.RemedyList": {
+      "description": "RemedyList contains a list of Remedy.",
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.Remedy"
+          }
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta"
+        }
+      },
+      "x-kubernetes-group-version-kind": [
+        {
+          "group": "remedy.karmada.io",
+          "kind": "RemedyList",
+          "version": "v1alpha1"
+        }
+      ]
+    },
+    "com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.RemedySpec": {
+      "description": "RemedySpec represents the desired behavior of Remedy.",
+      "type": "object",
+      "properties": {
+        "actions": {
+          "description": "Actions specifies the actions that remedy system needs to perform. If empty, no action will be performed.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "clusterAffinity": {
+          "description": "ClusterAffinity specifies the clusters that Remedy needs to pay attention to. For clusters that meet the DecisionConditions, Actions will be preformed. If empty, all clusters will be selected.",
+          "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.ClusterAffinity"
+        },
+        "decisionMatches": {
+          "description": "DecisionMatches indicates the decision matches of triggering the remedy system to perform the actions. As long as any one DecisionMatch matches, the Actions will be preformed. If empty, the Actions will be performed immediately.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.remedy.v1alpha1.DecisionMatch"
+          }
+        }
+      }
+    },
     "com.github.karmada-io.karmada.pkg.apis.search.v1alpha1.BackendStoreConfig": {
       "description": "BackendStoreConfig specifies backend store.",
       "type": "object",
@@ -17354,7 +19603,8 @@
       "description": "OpenSearchConfig holds the necessary configuration for client to access and config an OpenSearch server.",
       "type": "object",
       "required": [
-        "addresses"
+        "addresses",
+        "secretRef"
       ],
       "properties": {
         "addresses": {
@@ -17659,6 +19909,14 @@
       "description": "WorkSpec defines the desired state of Work.",
       "type": "object",
       "properties": {
+        "preserveResourcesOnDeletion": {
+          "description": "PreserveResourcesOnDeletion controls whether resources should be preserved on the member cluster when the Work object is deleted. If set to true, resources will be preserved on the member cluster. Default is false, which means resources will be deleted along with the Work object.",
+          "type": "boolean"
+        },
+        "suspendDispatching": {
+          "description": "SuspendDispatching controls whether dispatching should be suspended, nil means not suspend. Note: true means stop propagating to the corresponding member cluster, and does not prevent status collection.",
+          "type": "boolean"
+        },
         "workload": {
           "description": "Workload represents the manifest workload to be deployed on managed cluster.",
           "default": {},
@@ -17696,7 +19954,6 @@
           "description": "Manifests represents a list of Kubernetes resources to be deployed on the managed cluster.",
           "type": "array",
           "items": {
-            "default": {},
             "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.work.v1alpha1.Manifest"
           }
         }
@@ -17841,6 +20098,14 @@
         "producer"
       ],
       "properties": {
+        "clustersBeforeFailover": {
+          "description": "ClustersBeforeFailover records the clusters where running the application before failover.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created. Clients should not set this value to avoid the time inconsistency issue. It is represented in RFC3339 form(like '2021-04-25T10:02:10Z') and is in UTC.\n\nPopulated by the system. Read-only.",
           "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time"
@@ -17859,10 +20124,22 @@
           "description": "Message is a human-readable message indicating details about the eviction. This may be an empty string.",
           "type": "string"
         },
+        "preservedLabelState": {
+          "description": "PreservedLabelState represents the application state information collected from the original cluster, and it will be injected into the new cluster in form of application labels.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
         "producer": {
           "description": "Producer indicates the controller who triggered the eviction.",
           "type": "string",
           "default": ""
+        },
+        "purgeMode": {
+          "description": "PurgeMode represents how to deal with the legacy applications on the cluster from which the application is migrated. Valid options are \"Immediately\", \"Graciously\" and \"Never\".",
+          "type": "string"
         },
         "reason": {
           "description": "Reason contains a programmatic identifier indicating the reason for the eviction. Producers may define expected values and meanings for this field, and whether the values are considered a guaranteed API. The value should be a CamelCase string. This field may not be empty.",
@@ -17948,15 +20225,22 @@
       "description": "ReplicaRequirements represents the requirements required by each replica.",
       "type": "object",
       "properties": {
+        "namespace": {
+          "description": "Namespace represents the resources namespaces",
+          "type": "string"
+        },
         "nodeClaim": {
           "description": "NodeClaim represents the node claim HardNodeAffinity, NodeSelector and Tolerations required by each replica.",
           "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.work.v1alpha2.NodeClaim"
+        },
+        "priorityClassName": {
+          "description": "PriorityClassName represents the resources priorityClassName",
+          "type": "string"
         },
         "resourceRequest": {
           "description": "ResourceRequest represents the resources required by each replica.",
           "type": "object",
           "additionalProperties": {
-            "default": {},
             "$ref": "#/definitions/io.k8s.apimachinery.pkg.api.resource.Quantity"
           }
         }
@@ -18071,6 +20355,10 @@
           "description": "Placement represents the rule for select clusters to propagate resources.",
           "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.policy.v1alpha1.Placement"
         },
+        "preserveResourcesOnDeletion": {
+          "description": "PreserveResourcesOnDeletion controls whether resources should be preserved on the member clusters when the binding object is deleted. If set to true, resources will be preserved on the member clusters. Default is false, which means resources will be deleted along with the binding object. This setting applies to all Work objects created under this binding object.",
+          "type": "boolean"
+        },
         "propagateDeps": {
           "description": "PropagateDeps tells if relevant resources should be propagated automatically. It is inherited from PropagationPolicy or ClusterPropagationPolicy. default false.",
           "type": "boolean"
@@ -18092,6 +20380,10 @@
             "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.work.v1alpha2.BindingSnapshot"
           }
         },
+        "rescheduleTriggeredAt": {
+          "description": "RescheduleTriggeredAt is a timestamp representing when the referenced resource is triggered rescheduling. When this field is updated, it means a rescheduling is manually triggered by user, and the expected behavior of this action is to do a complete recalculation without referring to last scheduling results. It works with the status.lastScheduledTime field, and only when this timestamp is later than timestamp in status.lastScheduledTime will the rescheduling actually execute, otherwise, ignored.\n\nIt is represented in RFC3339 form (like '2006-01-02T15:04:05Z') and is in UTC.",
+          "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time"
+        },
         "resource": {
           "description": "Resource represents the Kubernetes resource to be propagated.",
           "default": {},
@@ -18100,6 +20392,10 @@
         "schedulerName": {
           "description": "SchedulerName represents which scheduler to proceed the scheduling. It inherits directly from the associated PropagationPolicy(or ClusterPropagationPolicy).",
           "type": "string"
+        },
+        "suspension": {
+          "description": "Suspension declares the policy for suspending different aspects of propagation. nil means no suspension. no default values.",
+          "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.work.v1alpha2.Suspension"
         }
       }
     },
@@ -18123,6 +20419,10 @@
             "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Condition"
           }
         },
+        "lastScheduledTime": {
+          "description": "LastScheduledTime representing the latest timestamp when scheduler successfully finished a scheduling. It is represented in RFC3339 form (like '2006-01-02T15:04:05Z') and is in UTC.",
+          "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time"
+        },
         "schedulerObservedGeneration": {
           "description": "SchedulerObservedGeneration is the generation(.metadata.generation) observed by the scheduler. If SchedulerObservedGeneration is less than the generation in metadata means the scheduler hasn't confirmed the scheduling result or hasn't done the schedule yet.",
           "type": "integer",
@@ -18131,6 +20431,24 @@
         "schedulerObservingAffinityName": {
           "description": "SchedulerObservedAffinityName is the name of affinity term that is the basis of current scheduling.",
           "type": "string"
+        }
+      }
+    },
+    "com.github.karmada-io.karmada.pkg.apis.work.v1alpha2.Suspension": {
+      "description": "Suspension defines the policy for suspending dispatching and scheduling.",
+      "type": "object",
+      "properties": {
+        "dispatching": {
+          "description": "Dispatching controls whether dispatching should be suspended. nil means not suspend, no default value, only accepts 'true'. Note: true means stop propagating to all clusters. Can not co-exist with DispatchingOnClusters which is used to suspend particular clusters.",
+          "type": "boolean"
+        },
+        "dispatchingOnClusters": {
+          "description": "DispatchingOnClusters declares a list of clusters to which the dispatching should be suspended. Note: Can not co-exist with Dispatching which is used to suspend all.",
+          "$ref": "#/definitions/com.github.karmada-io.karmada.pkg.apis.policy.v1alpha1.SuspendClusters"
+        },
+        "scheduling": {
+          "description": "Scheduling controls whether scheduling should be suspended, the scheduler will pause scheduling and not process resource binding when the value is true and resume scheduling when it's false or nil. This is designed for third-party systems to temporarily pause the scheduling of applications, which enabling manage resource allocation, prioritize critical workloads, etc. It is expected that third-party systems use an admission webhook to suspend scheduling at the time of ResourceBinding creation. Once a ResourceBinding has been scheduled, it cannot be paused afterward, as it may lead to ineffective suspension.",
+          "type": "boolean"
         }
       }
     },
@@ -18393,7 +20711,6 @@
       "properties": {
         "lastTransitionTime": {
           "description": "lastTransitionTime is the last time the condition transitioned from one status to another",
-          "default": {},
           "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time"
         },
         "message": {
@@ -18744,6 +21061,10 @@
           "description": "IP is set for load-balancer ingress points that are IP based (typically GCE or OpenStack load-balancers)",
           "type": "string"
         },
+        "ipMode": {
+          "description": "IPMode specifies how the load-balancer IP behaves, and may only be specified when the ip field is specified. Setting this to \"VIP\" indicates that traffic is delivered to the node with the destination set to the load-balancer's IP and port. Setting this to \"Proxy\" indicates that traffic is delivered to the node or pod with the destination set to the node's IP and node port or the pod's IP and port. Service implementations may use this information to adjust traffic routing.",
+          "type": "string"
+        },
         "ports": {
           "description": "Ports is a list of records of service ports If used, every port defined in the service should have an entry in it",
           "type": "array",
@@ -18765,7 +21086,8 @@
           "items": {
             "default": {},
             "$ref": "#/definitions/io.k8s.api.core.v1.LoadBalancerIngress"
-          }
+          },
+          "x-kubernetes-list-type": "atomic"
         }
       }
     },
@@ -18782,7 +21104,8 @@
           "items": {
             "default": {},
             "$ref": "#/definitions/io.k8s.api.core.v1.NodeSelectorTerm"
-          }
+          },
+          "x-kubernetes-list-type": "atomic"
         }
       },
       "x-kubernetes-map-type": "atomic"
@@ -18819,7 +21142,8 @@
           "items": {
             "type": "string",
             "default": ""
-          }
+          },
+          "x-kubernetes-list-type": "atomic"
         }
       }
     },
@@ -18833,7 +21157,8 @@
           "items": {
             "default": {},
             "$ref": "#/definitions/io.k8s.api.core.v1.NodeSelectorRequirement"
-          }
+          },
+          "x-kubernetes-list-type": "atomic"
         },
         "matchFields": {
           "description": "A list of node selector requirements by node's fields.",
@@ -18841,7 +21166,8 @@
           "items": {
             "default": {},
             "$ref": "#/definitions/io.k8s.api.core.v1.NodeSelectorRequirement"
-          }
+          },
+          "x-kubernetes-list-type": "atomic"
         }
       },
       "x-kubernetes-map-type": "atomic"
@@ -19087,7 +21413,8 @@
           "items": {
             "default": {},
             "$ref": "#/definitions/io.k8s.api.networking.v1.IngressLoadBalancerIngress"
-          }
+          },
+          "x-kubernetes-list-type": "atomic"
         }
       }
     },
@@ -19185,17 +21512,6 @@
         }
       }
     },
-    "io.k8s.api.networking.v1.IngressStatus": {
-      "description": "IngressStatus describe the current state of the Ingress.",
-      "type": "object",
-      "properties": {
-        "loadBalancer": {
-          "description": "loadBalancer contains the current status of the load-balancer.",
-          "default": {},
-          "$ref": "#/definitions/io.k8s.api.networking.v1.IngressLoadBalancerStatus"
-        }
-      }
-    },
     "io.k8s.api.networking.v1.IngressTLS": {
       "description": "IngressTLS describes the transport layer security associated with an ingress.",
       "type": "object",
@@ -19228,7 +21544,8 @@
           "type": "integer",
           "format": "int32"
         }
-      }
+      },
+      "x-kubernetes-map-type": "atomic"
     },
     "io.k8s.apiextensions-apiserver.pkg.apis.apiextensions.v1.JSON": {
       "description": "JSON represents any valid JSON value. These types are supported: bool, int64, float64, string, []interface{}, map[string]interface{} and nil."
@@ -19269,7 +21586,8 @@
           "items": {
             "default": {},
             "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ServerAddressByClientCIDR"
-          }
+          },
+          "x-kubernetes-list-type": "atomic"
         },
         "versions": {
           "description": "versions are the versions supported in this group.",
@@ -19277,7 +21595,8 @@
           "items": {
             "default": {},
             "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.GroupVersionForDiscovery"
-          }
+          },
+          "x-kubernetes-list-type": "atomic"
         }
       },
       "x-kubernetes-group-version-kind": [
@@ -19305,7 +21624,8 @@
           "items": {
             "default": {},
             "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.APIGroup"
-          }
+          },
+          "x-kubernetes-list-type": "atomic"
         },
         "kind": {
           "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
@@ -19337,7 +21657,8 @@
           "items": {
             "type": "string",
             "default": ""
-          }
+          },
+          "x-kubernetes-list-type": "atomic"
         },
         "group": {
           "description": "group is the preferred group of the resource.  Empty implies the group of the containing resource list. For subresources, this may have a different value, for example: Scale\".",
@@ -19364,7 +21685,8 @@
           "items": {
             "type": "string",
             "default": ""
-          }
+          },
+          "x-kubernetes-list-type": "atomic"
         },
         "singularName": {
           "description": "singularName is the singular name of the resource.  This allows clients to handle plural and singular opaquely. The singularName is more correct for reporting status on a single item and both singular and plural are allowed from the kubectl CLI interface.",
@@ -19416,7 +21738,8 @@
           "items": {
             "default": {},
             "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.APIResource"
-          }
+          },
+          "x-kubernetes-list-type": "atomic"
         }
       },
       "x-kubernetes-group-version-kind": [
@@ -19440,7 +21763,6 @@
       "properties": {
         "lastTransitionTime": {
           "description": "lastTransitionTime is the last time the condition transitioned from one status to another. This should be when the underlying condition changed.  If that is not known, then using the time when the API field changed is acceptable.",
-          "default": {},
           "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time"
         },
         "message": {
@@ -19484,7 +21806,8 @@
           "items": {
             "type": "string",
             "default": ""
-          }
+          },
+          "x-kubernetes-list-type": "atomic"
         },
         "gracePeriodSeconds": {
           "description": "The duration in seconds before the object should be deleted. Value must be non-negative integer. The value zero indicates delete immediately. If this value is nil, the default grace period for the specified type will be used. Defaults to a per object value if not specified. zero means delete immediately.",
@@ -19543,6 +21866,11 @@
           "group": "apps",
           "kind": "DeleteOptions",
           "version": "v1beta2"
+        },
+        {
+          "group": "apps.karmada.io",
+          "kind": "DeleteOptions",
+          "version": "v1alpha1"
         },
         {
           "group": "authentication.k8s.io",
@@ -19642,6 +21970,11 @@
         {
           "group": "coordination.k8s.io",
           "kind": "DeleteOptions",
+          "version": "v1alpha1"
+        },
+        {
+          "group": "coordination.k8s.io",
+          "kind": "DeleteOptions",
           "version": "v1beta1"
         },
         {
@@ -19672,7 +22005,7 @@
         {
           "group": "flowcontrol.apiserver.k8s.io",
           "kind": "DeleteOptions",
-          "version": "v1alpha1"
+          "version": "v1"
         },
         {
           "group": "flowcontrol.apiserver.k8s.io",
@@ -19765,9 +22098,14 @@
           "version": "v1beta1"
         },
         {
+          "group": "remedy.karmada.io",
+          "kind": "DeleteOptions",
+          "version": "v1alpha1"
+        },
+        {
           "group": "resource.k8s.io",
           "kind": "DeleteOptions",
-          "version": "v1alpha2"
+          "version": "v1alpha3"
         },
         {
           "group": "scheduling.k8s.io",
@@ -19803,6 +22141,11 @@
           "group": "storage.k8s.io",
           "kind": "DeleteOptions",
           "version": "v1beta1"
+        },
+        {
+          "group": "storagemigration.k8s.io",
+          "kind": "DeleteOptions",
+          "version": "v1alpha1"
         },
         {
           "group": "work.karmada.io",
@@ -19850,7 +22193,8 @@
           "items": {
             "default": {},
             "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.LabelSelectorRequirement"
-          }
+          },
+          "x-kubernetes-list-type": "atomic"
         },
         "matchLabels": {
           "description": "matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is \"key\", the operator is \"In\", and the values array contains only \"value\". The requirements are ANDed.",
@@ -19887,7 +22231,8 @@
           "items": {
             "type": "string",
             "default": ""
-          }
+          },
+          "x-kubernetes-list-type": "atomic"
         }
       }
     },
@@ -19962,7 +22307,6 @@
         },
         "creationTimestamp": {
           "description": "CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.\n\nPopulated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata",
-          "default": {},
           "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time"
         },
         "deletionGracePeriodSeconds": {
@@ -19981,6 +22325,7 @@
             "type": "string",
             "default": ""
           },
+          "x-kubernetes-list-type": "set",
           "x-kubernetes-patch-strategy": "merge"
         },
         "generateName": {
@@ -20006,7 +22351,8 @@
           "items": {
             "default": {},
             "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ManagedFieldsEntry"
-          }
+          },
+          "x-kubernetes-list-type": "atomic"
         },
         "name": {
           "description": "Name must be unique within a namespace. Is required when creating resources, although some resources may allow a client to request the generation of an appropriate name automatically. Name is primarily intended for creation idempotence and configuration definition. Cannot be updated. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names#names",
@@ -20023,6 +22369,10 @@
             "default": {},
             "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.OwnerReference"
           },
+          "x-kubernetes-list-map-keys": [
+            "uid"
+          ],
+          "x-kubernetes-list-type": "map",
           "x-kubernetes-patch-merge-key": "uid",
           "x-kubernetes-patch-strategy": "merge"
         },
@@ -20134,7 +22484,8 @@
         },
         "details": {
           "description": "Extended data associated with the reason.  Each reason may define its own extended details. This field is optional and the data returned is not guaranteed to conform to any schema except that defined by the reason type.",
-          "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.StatusDetails"
+          "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.StatusDetails",
+          "x-kubernetes-list-type": "atomic"
         },
         "kind": {
           "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
@@ -20163,11 +22514,6 @@
           "group": "",
           "kind": "Status",
           "version": "v1"
-        },
-        {
-          "group": "resource.k8s.io",
-          "kind": "Status",
-          "version": "v1alpha2"
         }
       ]
     },
@@ -20199,7 +22545,8 @@
           "items": {
             "default": {},
             "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.StatusCause"
-          }
+          },
+          "x-kubernetes-list-type": "atomic"
         },
         "group": {
           "description": "The group attribute of the resource associated with the status StatusReason.",
@@ -20239,7 +22586,6 @@
       "properties": {
         "object": {
           "description": "Object is:\n * If Type is Added or Modified: the new state of the object.\n * If Type is Deleted: the state of the object immediately before deletion.\n * If Type is Error: *Status is recommended; other types may make sense\n   depending on context.",
-          "default": {},
           "$ref": "#/definitions/io.k8s.apimachinery.pkg.runtime.RawExtension"
         },
         "type": {
@@ -20282,6 +22628,11 @@
           "group": "apps",
           "kind": "WatchEvent",
           "version": "v1beta2"
+        },
+        {
+          "group": "apps.karmada.io",
+          "kind": "WatchEvent",
+          "version": "v1alpha1"
         },
         {
           "group": "authentication.k8s.io",
@@ -20381,6 +22732,11 @@
         {
           "group": "coordination.k8s.io",
           "kind": "WatchEvent",
+          "version": "v1alpha1"
+        },
+        {
+          "group": "coordination.k8s.io",
+          "kind": "WatchEvent",
           "version": "v1beta1"
         },
         {
@@ -20411,7 +22767,7 @@
         {
           "group": "flowcontrol.apiserver.k8s.io",
           "kind": "WatchEvent",
-          "version": "v1alpha1"
+          "version": "v1"
         },
         {
           "group": "flowcontrol.apiserver.k8s.io",
@@ -20504,9 +22860,14 @@
           "version": "v1beta1"
         },
         {
+          "group": "remedy.karmada.io",
+          "kind": "WatchEvent",
+          "version": "v1alpha1"
+        },
+        {
           "group": "resource.k8s.io",
           "kind": "WatchEvent",
-          "version": "v1alpha2"
+          "version": "v1alpha3"
         },
         {
           "group": "scheduling.k8s.io",
@@ -20544,6 +22905,11 @@
           "version": "v1beta1"
         },
         {
+          "group": "storagemigration.k8s.io",
+          "kind": "WatchEvent",
+          "version": "v1alpha1"
+        },
+        {
           "group": "work.karmada.io",
           "kind": "WatchEvent",
           "version": "v1alpha1"
@@ -20558,6 +22924,59 @@
     "io.k8s.apimachinery.pkg.runtime.RawExtension": {
       "description": "RawExtension is used to hold extensions in external versions.\n\nTo use this, make a field which has RawExtension as its type in your external, versioned struct, and Object in your internal struct. You also need to register your various plugin types.\n\n// Internal package:\n\n\ttype MyAPIObject struct {\n\t\truntime.TypeMeta `json:\",inline\"`\n\t\tMyPlugin runtime.Object `json:\"myPlugin\"`\n\t}\n\n\ttype PluginA struct {\n\t\tAOption string `json:\"aOption\"`\n\t}\n\n// External package:\n\n\ttype MyAPIObject struct {\n\t\truntime.TypeMeta `json:\",inline\"`\n\t\tMyPlugin runtime.RawExtension `json:\"myPlugin\"`\n\t}\n\n\ttype PluginA struct {\n\t\tAOption string `json:\"aOption\"`\n\t}\n\n// On the wire, the JSON will look something like this:\n\n\t{\n\t\t\"kind\":\"MyAPIObject\",\n\t\t\"apiVersion\":\"v1\",\n\t\t\"myPlugin\": {\n\t\t\t\"kind\":\"PluginA\",\n\t\t\t\"aOption\":\"foo\",\n\t\t},\n\t}\n\nSo what happens? Decode first uses json or yaml to unmarshal the serialized data into your external MyAPIObject. That causes the raw JSON to be stored, but not unpacked. The next step is to copy (using pkg/conversion) into the internal struct. The runtime package's DefaultScheme has conversion functions installed which will unpack the JSON stored in RawExtension, turning it into the correct object type, and storing it in the Object. (TODO: In the case where the object is of an unknown type, a runtime.Unknown object will be created and stored.)",
       "type": "object"
+    },
+    "io.k8s.apimachinery.pkg.version.Info": {
+      "description": "Info contains versioning information. how we'll want to distribute that information.",
+      "type": "object",
+      "required": [
+        "major",
+        "minor",
+        "gitVersion",
+        "gitCommit",
+        "gitTreeState",
+        "buildDate",
+        "goVersion",
+        "compiler",
+        "platform"
+      ],
+      "properties": {
+        "buildDate": {
+          "type": "string",
+          "default": ""
+        },
+        "compiler": {
+          "type": "string",
+          "default": ""
+        },
+        "gitCommit": {
+          "type": "string",
+          "default": ""
+        },
+        "gitTreeState": {
+          "type": "string",
+          "default": ""
+        },
+        "gitVersion": {
+          "type": "string",
+          "default": ""
+        },
+        "goVersion": {
+          "type": "string",
+          "default": ""
+        },
+        "major": {
+          "type": "string",
+          "default": ""
+        },
+        "minor": {
+          "type": "string",
+          "default": ""
+        },
+        "platform": {
+          "type": "string",
+          "default": ""
+        }
+      }
     }
   },
   "parameters": {
@@ -20668,10 +23087,10 @@
       "in": "path",
       "required": true
     },
-    "pretty-nN7o5FEq": {
+    "pretty-tJGM1-ng": {
       "uniqueItems": true,
       "type": "string",
-      "description": "If 'true', then the output is pretty printed.",
+      "description": "If 'true', then the output is pretty printed. Defaults to 'false' unless the user-agent indicates a browser or command-line HTTP tool (curl and wget).",
       "name": "pretty",
       "in": "query"
     },

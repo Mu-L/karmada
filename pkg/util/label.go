@@ -20,10 +20,10 @@ import (
 	"sort"
 	"strings"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/sets"
 
-	workv1alpha1 "github.com/karmada-io/karmada/pkg/apis/work/v1alpha1"
 	workv1alpha2 "github.com/karmada-io/karmada/pkg/apis/work/v1alpha2"
 )
 
@@ -59,15 +59,13 @@ func RetainLabels(desired *unstructured.Unstructured, observed *unstructured.Uns
 		}
 		labels[key] = value
 	}
-	// TODO: Delete following one line in release-1.9
-	delete(labels, workv1alpha2.WorkUIDLabel)
 	if len(labels) > 0 {
 		desired.SetLabels(labels)
 	}
 }
 
-// MergeLabel adds label for the given object.
-func MergeLabel(obj *unstructured.Unstructured, labelKey string, labelValue string) {
+// MergeLabel adds label for the given object, replace the value if key exist.
+func MergeLabel(obj metav1.Object, labelKey string, labelValue string) {
 	labels := obj.GetLabels()
 	if labels == nil {
 		labels = make(map[string]string, 1)
@@ -77,7 +75,7 @@ func MergeLabel(obj *unstructured.Unstructured, labelKey string, labelValue stri
 }
 
 // RemoveLabels removes the labels from the given object.
-func RemoveLabels(obj *unstructured.Unstructured, labelKeys ...string) {
+func RemoveLabels(obj metav1.Object, labelKeys ...string) {
 	if len(labelKeys) == 0 {
 		return
 	}
@@ -111,18 +109,18 @@ func getDeletedLabelKeys(desired, observed *unstructured.Unstructured) sets.Set[
 
 // RecordManagedLabels sets or updates the annotation(resourcetemplate.karmada.io/managed-labels)
 // to record the label keys.
-func RecordManagedLabels(w *workv1alpha1.Work) {
-	annotations := w.GetAnnotations()
+func RecordManagedLabels(object *unstructured.Unstructured) {
+	annotations := object.GetAnnotations()
 	if annotations == nil {
 		annotations = make(map[string]string, 1)
 	}
 	var managedKeys []string
 	// record labels.
-	labels := w.GetLabels()
+	labels := object.GetLabels()
 	for key := range labels {
 		managedKeys = append(managedKeys, key)
 	}
 	sort.Strings(managedKeys)
 	annotations[workv1alpha2.ManagedLabels] = strings.Join(managedKeys, ",")
-	w.SetAnnotations(annotations)
+	object.SetAnnotations(annotations)
 }

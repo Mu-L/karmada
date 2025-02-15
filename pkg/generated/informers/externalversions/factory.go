@@ -24,12 +24,14 @@ import (
 	time "time"
 
 	versioned "github.com/karmada-io/karmada/pkg/generated/clientset/versioned"
+	apps "github.com/karmada-io/karmada/pkg/generated/informers/externalversions/apps"
 	autoscaling "github.com/karmada-io/karmada/pkg/generated/informers/externalversions/autoscaling"
 	cluster "github.com/karmada-io/karmada/pkg/generated/informers/externalversions/cluster"
 	config "github.com/karmada-io/karmada/pkg/generated/informers/externalversions/config"
 	internalinterfaces "github.com/karmada-io/karmada/pkg/generated/informers/externalversions/internalinterfaces"
 	networking "github.com/karmada-io/karmada/pkg/generated/informers/externalversions/networking"
 	policy "github.com/karmada-io/karmada/pkg/generated/informers/externalversions/policy"
+	remedy "github.com/karmada-io/karmada/pkg/generated/informers/externalversions/remedy"
 	search "github.com/karmada-io/karmada/pkg/generated/informers/externalversions/search"
 	work "github.com/karmada-io/karmada/pkg/generated/informers/externalversions/work"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -48,6 +50,7 @@ type sharedInformerFactory struct {
 	lock             sync.Mutex
 	defaultResync    time.Duration
 	customResync     map[reflect.Type]time.Duration
+	transform        cache.TransformFunc
 
 	informers map[reflect.Type]cache.SharedIndexInformer
 	// startedInformers is used for tracking which informers have been started.
@@ -82,6 +85,14 @@ func WithTweakListOptions(tweakListOptions internalinterfaces.TweakListOptionsFu
 func WithNamespace(namespace string) SharedInformerOption {
 	return func(factory *sharedInformerFactory) *sharedInformerFactory {
 		factory.namespace = namespace
+		return factory
+	}
+}
+
+// WithTransform sets a transform on all informers.
+func WithTransform(transform cache.TransformFunc) SharedInformerOption {
+	return func(factory *sharedInformerFactory) *sharedInformerFactory {
+		factory.transform = transform
 		return factory
 	}
 }
@@ -190,6 +201,7 @@ func (f *sharedInformerFactory) InformerFor(obj runtime.Object, newFunc internal
 	}
 
 	informer = newFunc(f.client, resyncPeriod)
+	informer.SetTransform(f.transform)
 	f.informers[informerType] = informer
 
 	return informer
@@ -224,6 +236,7 @@ type SharedInformerFactory interface {
 
 	// Start initializes all requested informers. They are handled in goroutines
 	// which run until the stop channel gets closed.
+	// Warning: Start does not block. When run in a go-routine, it will race with a later WaitForCacheSync.
 	Start(stopCh <-chan struct{})
 
 	// Shutdown marks a factory as shutting down. At that point no new
@@ -249,13 +262,19 @@ type SharedInformerFactory interface {
 	// client.
 	InformerFor(obj runtime.Object, newFunc internalinterfaces.NewInformerFunc) cache.SharedIndexInformer
 
+	Apps() apps.Interface
 	Autoscaling() autoscaling.Interface
 	Cluster() cluster.Interface
 	Config() config.Interface
 	Networking() networking.Interface
 	Policy() policy.Interface
+	Remedy() remedy.Interface
 	Search() search.Interface
 	Work() work.Interface
+}
+
+func (f *sharedInformerFactory) Apps() apps.Interface {
+	return apps.New(f, f.namespace, f.tweakListOptions)
 }
 
 func (f *sharedInformerFactory) Autoscaling() autoscaling.Interface {
@@ -276,6 +295,10 @@ func (f *sharedInformerFactory) Networking() networking.Interface {
 
 func (f *sharedInformerFactory) Policy() policy.Interface {
 	return policy.New(f, f.namespace, f.tweakListOptions)
+}
+
+func (f *sharedInformerFactory) Remedy() remedy.Interface {
+	return remedy.New(f, f.namespace, f.tweakListOptions)
 }
 
 func (f *sharedInformerFactory) Search() search.Interface {

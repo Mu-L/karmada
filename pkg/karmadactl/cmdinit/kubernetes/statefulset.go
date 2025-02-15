@@ -25,10 +25,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/component-base/cli/flag"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	"github.com/karmada-io/karmada/pkg/karmadactl/cmdinit/options"
-	"github.com/karmada-io/karmada/pkg/karmadactl/cmdinit/utils"
 )
 
 const (
@@ -93,7 +92,7 @@ func (i *CommandInitOption) etcdVolume() (*[]corev1.Volume, *corev1.PersistentVo
 				AccessModes:      []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
 				StorageClassName: &i.StorageClassesName,
 				VolumeMode:       &mode,
-				Resources: corev1.ResourceRequirements{
+				Resources: corev1.VolumeResourceRequirements{
 					Requests: corev1.ResourceList{
 						corev1.ResourceStorage: resource.MustParse(i.EtcdPersistentVolumeSize),
 					},
@@ -233,7 +232,8 @@ func (i *CommandInitOption) makeETCDStatefulSet() *appsv1.StatefulSet {
 
 	// etcd Container
 	podSpec := corev1.PodSpec{
-		ImagePullSecrets: i.getImagePullSecrets(),
+		ImagePullSecrets:  i.getImagePullSecrets(),
+		PriorityClassName: i.EtcdPriorityClass,
 		Affinity: &corev1.Affinity{
 			PodAntiAffinity: &corev1.PodAntiAffinity{
 				PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
@@ -255,7 +255,7 @@ func (i *CommandInitOption) makeETCDStatefulSet() *appsv1.StatefulSet {
 				},
 			},
 		},
-		AutomountServiceAccountToken: pointer.Bool(false),
+		AutomountServiceAccountToken: ptr.To[bool](false),
 		Containers: []corev1.Container{
 			{
 				Name:  etcdStatefulSetAndServiceName,
@@ -300,11 +300,12 @@ func (i *CommandInitOption) makeETCDStatefulSet() *appsv1.StatefulSet {
 		Volumes: *Volumes,
 	}
 
-	if i.EtcdStorageMode == "hostPath" && i.EtcdNodeSelectorLabels != "" {
-		podSpec.NodeSelector = utils.StringToMap(i.EtcdNodeSelectorLabels)
-	}
-	if i.EtcdStorageMode == "hostPath" && i.EtcdNodeSelectorLabels == "" {
-		podSpec.NodeSelector = map[string]string{"karmada.io/etcd": ""}
+	if i.EtcdStorageMode == "hostPath" {
+		if i.EtcdNodeSelectorLabelsMap != nil {
+			podSpec.NodeSelector = i.EtcdNodeSelectorLabelsMap
+		} else {
+			podSpec.NodeSelector = map[string]string{"karmada.io/etcd": ""}
+		}
 	}
 
 	// InitContainers

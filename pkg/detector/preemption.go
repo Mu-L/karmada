@@ -17,10 +17,15 @@ limitations under the License.
 package detector
 
 import (
+	"context"
+
+	pq "github.com/emirpasic/gods/queues/priorityqueue"
+	godsutils "github.com/emirpasic/gods/utils"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/klog/v2"
 
@@ -32,6 +37,13 @@ import (
 	"github.com/karmada-io/karmada/pkg/util/helper"
 	"github.com/karmada-io/karmada/pkg/util/names"
 )
+
+// PriorityKey is the unique propagation policy key with priority.
+type PriorityKey struct {
+	runtime.Object
+	// Priority is the priority of the propagation policy.
+	Priority int32
+}
 
 // preemptionEnabled checks if preemption is enabled.
 func preemptionEnabled(preemption policyv1alpha1.PreemptionBehavior) bool {
@@ -45,7 +57,7 @@ func preemptionEnabled(preemption policyv1alpha1.PreemptionBehavior) bool {
 	return true
 }
 
-// handleClusterPropagationPolicyPreemption handles the preemption process of PropagationPolicy.
+// handlePropagationPolicyPreemption  handles the preemption process of PropagationPolicy.
 // The preemption rule: high-priority PP > low-priority PP > CPP.
 func (d *ResourceDetector) handlePropagationPolicyPreemption(policy *policyv1alpha1.PropagationPolicy) error {
 	var errs []error
@@ -95,9 +107,9 @@ func (d *ResourceDetector) handleClusterPropagationPolicyPreemption(policy *poli
 
 // preemptPropagationPolicy preempts resource template that is claimed by PropagationPolicy.
 func (d *ResourceDetector) preemptPropagationPolicy(resourceTemplate *unstructured.Unstructured, policy *policyv1alpha1.PropagationPolicy) (err error) {
-	rtLabels := resourceTemplate.GetLabels()
-	claimedPolicyNamespace := util.GetLabelValue(rtLabels, policyv1alpha1.PropagationPolicyNamespaceLabel)
-	claimedPolicyName := util.GetLabelValue(rtLabels, policyv1alpha1.PropagationPolicyNameLabel)
+	rtAnnotations := resourceTemplate.GetAnnotations()
+	claimedPolicyNamespace := util.GetAnnotationValue(rtAnnotations, policyv1alpha1.PropagationPolicyNamespaceAnnotation)
+	claimedPolicyName := util.GetAnnotationValue(rtAnnotations, policyv1alpha1.PropagationPolicyNameAnnotation)
 	if claimedPolicyName == "" || claimedPolicyNamespace == "" {
 		return nil
 	}
@@ -147,7 +159,7 @@ func (d *ResourceDetector) preemptPropagationPolicy(resourceTemplate *unstructur
 
 // preemptClusterPropagationPolicyDirectly directly preempts resource template claimed by ClusterPropagationPolicy regardless of priority.
 func (d *ResourceDetector) preemptClusterPropagationPolicyDirectly(resourceTemplate *unstructured.Unstructured, policy *policyv1alpha1.PropagationPolicy) (err error) {
-	claimedPolicyName := util.GetLabelValue(resourceTemplate.GetLabels(), policyv1alpha1.ClusterPropagationPolicyLabel)
+	claimedPolicyName := util.GetAnnotationValue(resourceTemplate.GetAnnotations(), policyv1alpha1.ClusterPropagationPolicyAnnotation)
 	if claimedPolicyName == "" {
 		return nil
 	}
@@ -175,7 +187,7 @@ func (d *ResourceDetector) preemptClusterPropagationPolicyDirectly(resourceTempl
 
 // preemptClusterPropagationPolicy preempts resource template that is claimed by ClusterPropagationPolicy.
 func (d *ResourceDetector) preemptClusterPropagationPolicy(resourceTemplate *unstructured.Unstructured, policy *policyv1alpha1.ClusterPropagationPolicy) (err error) {
-	claimedPolicyName := util.GetLabelValue(resourceTemplate.GetLabels(), policyv1alpha1.ClusterPropagationPolicyLabel)
+	claimedPolicyName := util.GetAnnotationValue(resourceTemplate.GetAnnotations(), policyv1alpha1.ClusterPropagationPolicyAnnotation)
 	if claimedPolicyName == "" {
 		return nil
 	}
@@ -224,7 +236,7 @@ func (d *ResourceDetector) preemptClusterPropagationPolicy(resourceTemplate *uns
 
 // fetchResourceTemplate fetches resource template by resource selector, ignore it if not found or deleting.
 func (d *ResourceDetector) fetchResourceTemplate(rs policyv1alpha1.ResourceSelector) (*unstructured.Unstructured, error) {
-	resourceTemplate, err := helper.FetchResourceTemplate(d.DynamicClient, d.InformerManager, d.RESTMapper, helper.ConstructObjectReference(rs))
+	resourceTemplate, err := helper.FetchResourceTemplate(context.TODO(), d.DynamicClient, d.InformerManager, d.RESTMapper, helper.ConstructObjectReference(rs))
 	if err != nil {
 		// do nothing if resource template not exist, it might has been removed.
 		if apierrors.IsNotFound(err) {
@@ -256,11 +268,14 @@ func (d *ResourceDetector) HandleDeprioritizedPropagationPolicy(oldPolicy policy
 		klog.Errorf("Failed to list PropagationPolicy from namespace: %s, error: %v", newPolicy.GetNamespace(), err)
 		return
 	}
+	if len(policies) == 0 {
+		klog.Infof("No PropagationPolicy to preempt the PropagationPolicy(%s/%s).", newPolicy.GetNamespace(), newPolicy.GetName())
+	}
 
-	// TODO(@RainbowMango): Should sort the listed policies to ensure the
+	// Use the priority queue to sort the listed policies to ensure the
 	// higher priority PropagationPolicy be process first to avoid possible
 	// multiple preemption.
-
+	sortedPotentialKeys := pq.NewWith(priorityDescendingComparator)
 	for i := range policies {
 		var potentialPolicy policyv1alpha1.PropagationPolicy
 		if err = helper.ConvertToTypedObject(policies[i], &potentialPolicy); err != nil {
@@ -277,15 +292,14 @@ func (d *ResourceDetector) HandleDeprioritizedPropagationPolicy(oldPolicy policy
 			potentialPolicy.Spec.Preemption == policyv1alpha1.PreemptAlways &&
 			potentialPolicy.ExplicitPriority() > newPolicy.ExplicitPriority() &&
 			potentialPolicy.ExplicitPriority() < oldPolicy.ExplicitPriority() {
-			var potentialKey util.QueueKey
-			potentialKey, err = ClusterWideKeyFunc(&potentialPolicy)
-			if err != nil {
-				return
-			}
-			klog.Infof("Enqueuing PropagationPolicy(%s/%s) in case of PropagationPolicy(%s/%s) priority changes", potentialPolicy.GetNamespace(), potentialPolicy.GetName(), newPolicy.GetNamespace(), newPolicy.GetName())
-			d.policyReconcileWorker.Add(potentialKey)
+			klog.Infof("Enqueuing PropagationPolicy(%s/%s) in case of PropagationPolicy(%s/%s) priority changes.", potentialPolicy.GetNamespace(), potentialPolicy.GetName(), newPolicy.GetNamespace(), newPolicy.GetName())
+			sortedPotentialKeys.Enqueue(&PriorityKey{
+				Object:   &potentialPolicy,
+				Priority: potentialPolicy.ExplicitPriority(),
+			})
 		}
 	}
+	requeuePotentialKeys(sortedPotentialKeys, d.policyReconcileWorker)
 }
 
 // HandleDeprioritizedClusterPropagationPolicy responses to priority change of a ClusterPropagationPolicy,
@@ -293,19 +307,21 @@ func (d *ResourceDetector) HandleDeprioritizedPropagationPolicy(oldPolicy policy
 // check if there is another ClusterPropagationPolicy could preempt the targeted resource,
 // and put the ClusterPropagationPolicy in the queue to trigger preemption.
 func (d *ResourceDetector) HandleDeprioritizedClusterPropagationPolicy(oldPolicy policyv1alpha1.ClusterPropagationPolicy, newPolicy policyv1alpha1.ClusterPropagationPolicy) {
-	klog.Infof("ClusterPropagationPolicy(%s/%s) priority changed from %d to %d",
-		newPolicy.GetNamespace(), newPolicy.GetName(), *oldPolicy.Spec.Priority, *newPolicy.Spec.Priority)
-
-	policies, err := d.clusterPropagationPolicyLister.ByNamespace(newPolicy.GetNamespace()).List(labels.Everything())
+	klog.Infof("ClusterPropagationPolicy(%s) priority changed from %d to %d",
+		newPolicy.GetName(), *oldPolicy.Spec.Priority, *newPolicy.Spec.Priority)
+	policies, err := d.clusterPropagationPolicyLister.List(labels.Everything())
 	if err != nil {
-		klog.Errorf("Failed to list ClusterPropagationPolicy from namespace: %s, error: %v", newPolicy.GetNamespace(), err)
+		klog.Errorf("Failed to list ClusterPropagationPolicy, error: %v", err)
 		return
 	}
+	if len(policies) == 0 {
+		klog.Infof("No ClusterPropagationPolicy to preempt the ClusterPropagationPolicy(%s).", newPolicy.GetName())
+	}
 
-	// TODO(@RainbowMango): Should sort the listed policies to ensure the
+	// Use the priority queue to sort the listed policies to ensure the
 	// higher priority ClusterPropagationPolicy be process first to avoid possible
 	// multiple preemption.
-
+	sortedPotentialKeys := pq.NewWith(priorityDescendingComparator)
 	for i := range policies {
 		var potentialPolicy policyv1alpha1.ClusterPropagationPolicy
 		if err = helper.ConvertToTypedObject(policies[i], &potentialPolicy); err != nil {
@@ -322,14 +338,32 @@ func (d *ResourceDetector) HandleDeprioritizedClusterPropagationPolicy(oldPolicy
 			potentialPolicy.Spec.Preemption == policyv1alpha1.PreemptAlways &&
 			potentialPolicy.ExplicitPriority() > newPolicy.ExplicitPriority() &&
 			potentialPolicy.ExplicitPriority() < oldPolicy.ExplicitPriority() {
-			var potentialKey util.QueueKey
-			potentialKey, err = ClusterWideKeyFunc(&potentialPolicy)
-			if err != nil {
-				return
-			}
-			klog.Infof("Enqueuing ClusterPropagationPolicy(%s/%s) in case of ClusterPropagationPolicy(%s/%s) priority changes",
-				potentialPolicy.GetNamespace(), potentialPolicy.GetName(), newPolicy.GetNamespace(), newPolicy.GetName())
-			d.clusterPolicyReconcileWorker.Add(potentialKey)
+			klog.Infof("Enqueuing ClusterPropagationPolicy(%s) in case of ClusterPropagationPolicy(%s) priority changes.",
+				potentialPolicy.GetName(), newPolicy.GetName())
+			sortedPotentialKeys.Enqueue(&PriorityKey{
+				Object:   &potentialPolicy,
+				Priority: potentialPolicy.ExplicitPriority(),
+			})
 		}
 	}
+	requeuePotentialKeys(sortedPotentialKeys, d.clusterPolicyReconcileWorker)
+}
+
+// requeuePotentialKeys re-queues potential policy keys.
+func requeuePotentialKeys(sortedPotentialKeys *pq.Queue, worker util.AsyncWorker) {
+	for {
+		key, ok := sortedPotentialKeys.Dequeue()
+		if !ok {
+			break
+		}
+
+		worker.Enqueue(key.(*PriorityKey).Object)
+	}
+}
+
+// priorityDescendingComparator provides a basic descending comparison on policy priority.
+func priorityDescendingComparator(a, b interface{}) int {
+	aPriority := a.(*PriorityKey).Priority
+	bPriority := b.(*PriorityKey).Priority
+	return godsutils.Int32Comparator(bPriority, aPriority)
 }

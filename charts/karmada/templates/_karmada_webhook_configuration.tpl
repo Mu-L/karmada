@@ -7,7 +7,7 @@ kind: MutatingWebhookConfiguration
 metadata:
   name: mutating-config
   labels:
-    app: mutating-config
+    app: karmada-webhook
     {{- include "karmada.commonLabels" . | nindent 4 }}
 webhooks:
   - name: propagationpolicy.karmada.io
@@ -47,6 +47,34 @@ webhooks:
         scope: "Namespaced"
     clientConfig:
       url: https://{{ $name }}-webhook.{{ $namespace }}.svc:443/mutate-overridepolicy
+      {{- include "karmada.webhook.caBundle" . | nindent 6 }}
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions: ["v1"]
+    timeoutSeconds: 3
+  - name: resourcebinding.karmada.io
+    rules:
+      - operations: ["CREATE"]
+        apiGroups: ["work.karmada.io"]
+        apiVersions: ["*"]
+        resources: ["resourcebindings"]
+        scope: "Namespaced"
+    clientConfig:
+      url: https://{{ $name }}-webhook.{{ $namespace }}.svc:443/mutate-resourcebinding
+      {{- include "karmada.webhook.caBundle" . | nindent 6 }}
+    failurePolicy: Fail
+    sideEffects: None
+    admissionReviewVersions: ["v1"]
+    timeoutSeconds: 3
+  - name: clusterresourcebinding.karmada.io
+    rules:
+      - operations: ["CREATE"]
+        apiGroups: ["work.karmada.io"]
+        apiVersions: ["*"]
+        resources: ["clusterresourcebindings"]
+        scope: "Cluster"
+    clientConfig:
+      url: https://{{ $name }}-webhook.{{ $namespace }}.svc:443/mutate-clusterresourcebinding
       {{- include "karmada.webhook.caBundle" . | nindent 6 }}
     failurePolicy: Fail
     sideEffects: None
@@ -100,7 +128,7 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: validating-config
   labels:
-    app: validating-config
+    app: karmada-webhook
     {{- include "karmada.commonLabels" . | nindent 4 }}
 webhooks:
   - name: propagationpolicy.karmada.io

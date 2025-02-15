@@ -24,11 +24,13 @@ import (
 	eventsv1 "k8s.io/api/events/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
+	appsv1alpha1 "github.com/karmada-io/karmada/pkg/apis/apps/v1alpha1"
 	autoscalingv1alpha1 "github.com/karmada-io/karmada/pkg/apis/autoscaling/v1alpha1"
 	clusterv1alpha1 "github.com/karmada-io/karmada/pkg/apis/cluster/v1alpha1"
 	configv1alpha1 "github.com/karmada-io/karmada/pkg/apis/config/v1alpha1"
 	networkingv1alpha1 "github.com/karmada-io/karmada/pkg/apis/networking/v1alpha1"
 	policyv1alpha1 "github.com/karmada-io/karmada/pkg/apis/policy/v1alpha1"
+	remedyv1alpha1 "github.com/karmada-io/karmada/pkg/apis/remedy/v1alpha1"
 	workv1alpha1 "github.com/karmada-io/karmada/pkg/apis/work/v1alpha1"
 )
 
@@ -62,6 +64,8 @@ func NewSkippedResourceConfig() *SkippedResourceConfig {
 	r.DisableGroup(configv1alpha1.GroupVersion.Group)
 	r.DisableGroup(networkingv1alpha1.GroupVersion.Group)
 	r.DisableGroup(autoscalingv1alpha1.GroupVersion.Group)
+	r.DisableGroup(remedyv1alpha1.GroupVersion.Group)
+	r.DisableGroup(appsv1alpha1.GroupVersion.Group)
 	// disable event by default
 	r.DisableGroup(eventsv1.GroupName)
 	r.DisableGroupVersionKind(corev1EventGVK)

@@ -39,6 +39,7 @@ import (
 	"github.com/karmada-io/karmada/pkg/karmadactl/options"
 	"github.com/karmada-io/karmada/pkg/karmadactl/util"
 	tokenutil "github.com/karmada-io/karmada/pkg/karmadactl/util/bootstraptoken"
+	utilcomp "github.com/karmada-io/karmada/pkg/karmadactl/util/completion"
 )
 
 var (
@@ -116,7 +117,7 @@ func NewCmdTokenCreate(f util.Factory, out io.Writer, tokenOpts *CommandTokenOpt
 		`),
 		SilenceUsage:          true,
 		DisableFlagsInUseLine: true,
-		RunE: func(Cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			// Get control plane kube-apiserver client
 			client, err := f.KubernetesClientSet()
 			if err != nil {
@@ -135,6 +136,7 @@ func NewCmdTokenCreate(f util.Factory, out io.Writer, tokenOpts *CommandTokenOpt
 	cmd.Flags().StringSliceVar(&tokenOpts.Groups, "groups", tokenutil.DefaultGroups, fmt.Sprintf("Extra groups that this token will authenticate as when used for authentication. Must match %q", bootstrapapi.BootstrapGroupPattern))
 	cmd.Flags().StringVar(&tokenOpts.Description, "description", tokenOpts.Description, "A human friendly description of how this token is used.")
 
+	utilcomp.RegisterCompletionFuncForKarmadaContextFlag(cmd)
 	return cmd
 }
 
@@ -144,7 +146,7 @@ func NewCmdTokenList(f util.Factory, out io.Writer, errW io.Writer, tokenOpts *C
 		Use:   "list",
 		Short: "List bootstrap tokens on the server",
 		Long:  "This command will list all bootstrap tokens for you.",
-		RunE: func(tokenCmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			// Get control plane kube-apiserver client
 			client, err := f.KubernetesClientSet()
 			if err != nil {
@@ -158,6 +160,7 @@ func NewCmdTokenList(f util.Factory, out io.Writer, errW io.Writer, tokenOpts *C
 
 	options.AddKubeConfigFlags(cmd.Flags())
 
+	utilcomp.RegisterCompletionFuncForKarmadaContextFlag(cmd)
 	return cmd
 }
 
@@ -173,7 +176,7 @@ func NewCmdTokenDelete(f util.Factory, out io.Writer, tokenOpts *CommandTokenOpt
 			The [token-value] is the full Token of the form "[a-z0-9]{6}.[a-z0-9]{16}" or the
 			Token ID of the form "[a-z0-9]{6}" to delete.
 		`),
-		RunE: func(tokenCmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			if len(args) < 1 {
 				return fmt.Errorf("missing subcommand; 'token delete' is missing token of form %q", bootstrapapi.BootstrapTokenIDPattern)
 			}
@@ -190,6 +193,7 @@ func NewCmdTokenDelete(f util.Factory, out io.Writer, tokenOpts *CommandTokenOpt
 
 	options.AddKubeConfigFlags(cmd.Flags())
 
+	utilcomp.RegisterCompletionFuncForKarmadaContextFlag(cmd)
 	return cmd
 }
 
@@ -286,8 +290,11 @@ func (o *CommandTokenOptions) runListTokens(client kubeclient.Interface, out io.
 // runDeleteTokens removes a bootstrap tokens from the server.
 func (o *CommandTokenOptions) runDeleteTokens(out io.Writer, client kubeclient.Interface, tokenIDsOrTokens []string) error {
 	for _, tokenIDOrToken := range tokenIDsOrTokens {
-		// Assume this is a token id and try to parse it
-		tokenID := tokenIDOrToken
+		// Assume this is a token id and try to parse it.
+		// Notes: Bootstrap Tokens take the form of abcdef.0123456789abcdef. The first part of the token is the public
+		// `Token ID` and is considered public information. It is used when referring to a token without leaking the secret
+		// part used for authentication. The second part is the `Token Secret` and should only be shared with trusted parties.
+		id := tokenIDOrToken
 		klog.V(1).Info("[token] parsing token")
 		if !bootstraputil.IsValidBootstrapTokenID(tokenIDOrToken) {
 			// Okay, the full token with both id and secret was probably passed. Parse it and extract the ID only
@@ -296,15 +303,15 @@ func (o *CommandTokenOptions) runDeleteTokens(out io.Writer, client kubeclient.I
 				return fmt.Errorf("given token didn't match pattern %q or %q",
 					bootstrapapi.BootstrapTokenIDPattern, bootstrapapi.BootstrapTokenIDPattern)
 			}
-			tokenID = bts.ID
+			id = bts.ID
 		}
 
-		tokenSecretName := bootstraputil.BootstrapTokenSecretName(tokenID)
-		klog.V(1).Infof("[token] deleting token %q", tokenID)
-		if err := client.CoreV1().Secrets(metav1.NamespaceSystem).Delete(context.TODO(), tokenSecretName, metav1.DeleteOptions{}); err != nil {
-			return fmt.Errorf("failed to delete bootstrap token %q, err: %w", tokenID, err)
+		secretName := bootstraputil.BootstrapTokenSecretName(id)
+		klog.V(1).Infof("[token] deleting secret %s", secretName)
+		if err := client.CoreV1().Secrets(metav1.NamespaceSystem).Delete(context.TODO(), secretName, metav1.DeleteOptions{}); err != nil {
+			return fmt.Errorf("failed to delete secret %q, err: %w", secretName, err)
 		}
-		fmt.Fprintf(out, "bootstrap token %q deleted\n", tokenID)
+		fmt.Fprintf(out, "bootstrap token %q deleted\n", id)
 	}
 	return nil
 }

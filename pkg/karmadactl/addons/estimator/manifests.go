@@ -48,6 +48,11 @@ spec:
             - /bin/karmada-scheduler-estimator
             - --kubeconfig=/etc/{{ .MemberClusterName}}-kubeconfig
             - --cluster-name={{ .MemberClusterName}}
+            - --grpc-auth-cert-file=/etc/karmada/pki/karmada.crt
+            - --grpc-auth-key-file=/etc/karmada/pki/karmada.key
+            - --grpc-client-ca-file=/etc/karmada/pki/ca.crt
+            - --metrics-bind-address=0.0.0.0:8080
+            - --health-probe-bind-address=0.0.0.0:10351
           livenessProbe:
             httpGet:
               path: /healthz
@@ -57,11 +62,21 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 15
             timeoutSeconds: 5
+          ports:
+            - containerPort: 8080
+              name: metrics
+              protocol: TCP
           volumeMounts:
+            - name: k8s-certs
+              mountPath: /etc/karmada/pki
+              readOnly: true
             - name: member-kubeconfig
               subPath: {{ .MemberClusterName}}-kubeconfig
               mountPath: /etc/{{ .MemberClusterName}}-kubeconfig
       volumes:
+        - name: k8s-certs
+          secret:
+            secretName: karmada-cert
         - name: member-kubeconfig
           secret:
             secretName: {{ .MemberClusterName}}-kubeconfig

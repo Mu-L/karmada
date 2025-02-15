@@ -34,30 +34,11 @@ const (
 	// WorkPermanentIDLabel is the ID of Work object.
 	WorkPermanentIDLabel = "work.karmada.io/permanent-id"
 
-	// ResourceBindingUIDLabel is the UID of ResourceBinding object.
-	ResourceBindingUIDLabel = "resourcebinding.karmada.io/uid"
-
-	// ClusterResourceBindingUIDLabel is the uid of ClusterResourceBinding object.
-	ClusterResourceBindingUIDLabel = "clusterresourcebinding.karmada.io/uid"
-
 	// WorkNamespaceAnnotation is added to objects to specify associated Work's namespace.
 	WorkNamespaceAnnotation = "work.karmada.io/namespace"
 
 	// WorkNameAnnotation is added to objects to specify associated Work's name.
 	WorkNameAnnotation = "work.karmada.io/name"
-
-	// WorkUIDLabel is the uid of Work object.
-	WorkUIDLabel = "work.karmada.io/uid"
-
-	// ResourceBindingReferenceKey is the key of ResourceBinding object.
-	// It is usually a unique hash value of ResourceBinding object's namespace and name, intended to be added to the Work object.
-	// It will be used to retrieve all Works objects that derived from a specific ResourceBinding object.
-	ResourceBindingReferenceKey = "resourcebinding.karmada.io/key"
-
-	// ClusterResourceBindingReferenceKey is the key of ClusterResourceBinding object.
-	// It is usually a unique hash value of ClusterResourceBinding object's namespace and name, intended to be added to the Work object.
-	// It will be used to retrieve all Works objects that derived by a specific ClusterResourceBinding object.
-	ClusterResourceBindingReferenceKey = "clusterresourcebinding.karmada.io/key"
 
 	// ResourceBindingNamespaceAnnotationKey is added to object to describe the associated ResourceBinding's namespace.
 	// It is added to:
@@ -77,14 +58,19 @@ const (
 	// - Manifest in Work object: describes the name of ClusterResourceBinding which the manifest derived from.
 	ClusterResourceBindingAnnotationKey = "clusterresourcebinding.karmada.io/name"
 
-	// WorkNamespaceLabel is added to objects to specify associated Work's namespace.
-	WorkNamespaceLabel = "work.karmada.io/namespace"
-
-	// WorkNameLabel is added to objects to specify associated Work's name.
-	WorkNameLabel = "work.karmada.io/name"
-
 	// BindingManagedByLabel is added to ResourceBinding to represent what kind of resource manages this Binding.
 	BindingManagedByLabel = "binding.karmada.io/managed-by"
+
+	// ResourceTemplateGenerationAnnotationKey records the generation of resource template in Karmada APIServer,
+	// It will be injected into the resource when propagating to member clusters, to denote the specific version of
+	// the resource template from which the resource is derived. It might be helpful in the following cases:
+	// 1. Facilitating observation from member clusters to ascertain if the most recent resource template has been
+	//    completely synced.
+	// 2. The annotation will be synced back to Karmada during the process of syncing resource status,
+	//    by leveraging this annotation, Karmada can infer if the most recent resource template has been completely
+	//    synced on member clusters, then generates accurate observed generation(like Deployment's .status.observedGeneration)
+	//    which might be required by the release system.
+	ResourceTemplateGenerationAnnotationKey = "resourcetemplate.karmada.io/generation"
 )
 
 // Define resource conflict resolution

@@ -17,16 +17,23 @@ limitations under the License.
 package binding
 
 import (
+	"context"
+	"strconv"
+
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/util/errors"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/klog/v2"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	configv1alpha1 "github.com/karmada-io/karmada/pkg/apis/config/v1alpha1"
 	policyv1alpha1 "github.com/karmada-io/karmada/pkg/apis/policy/v1alpha1"
-	workv1alpha1 "github.com/karmada-io/karmada/pkg/apis/work/v1alpha1"
 	workv1alpha2 "github.com/karmada-io/karmada/pkg/apis/work/v1alpha2"
+	"github.com/karmada-io/karmada/pkg/controllers/ctrlutil"
+	"github.com/karmada-io/karmada/pkg/features"
 	"github.com/karmada-io/karmada/pkg/resourceinterpreter"
 	"github.com/karmada-io/karmada/pkg/util"
 	"github.com/karmada-io/karmada/pkg/util/helper"
@@ -36,32 +43,11 @@ import (
 
 // ensureWork ensure Work to be created or updated.
 func ensureWork(
-	c client.Client, resourceInterpreter resourceinterpreter.ResourceInterpreter, workload *unstructured.Unstructured,
+	ctx context.Context, c client.Client, resourceInterpreter resourceinterpreter.ResourceInterpreter, workload *unstructured.Unstructured,
 	overrideManager overridemanager.OverrideManager, binding metav1.Object, scope apiextensionsv1.ResourceScope,
 ) error {
-	var targetClusters []workv1alpha2.TargetCluster
-	var placement *policyv1alpha1.Placement
-	var requiredByBindingSnapshot []workv1alpha2.BindingSnapshot
-	var replicas int32
-	var conflictResolutionInBinding policyv1alpha1.ConflictResolution
-	switch scope {
-	case apiextensionsv1.NamespaceScoped:
-		bindingObj := binding.(*workv1alpha2.ResourceBinding)
-		targetClusters = bindingObj.Spec.Clusters
-		requiredByBindingSnapshot = bindingObj.Spec.RequiredBy
-		placement = bindingObj.Spec.Placement
-		replicas = bindingObj.Spec.Replicas
-		conflictResolutionInBinding = bindingObj.Spec.ConflictResolution
-	case apiextensionsv1.ClusterScoped:
-		bindingObj := binding.(*workv1alpha2.ClusterResourceBinding)
-		targetClusters = bindingObj.Spec.Clusters
-		requiredByBindingSnapshot = bindingObj.Spec.RequiredBy
-		placement = bindingObj.Spec.Placement
-		replicas = bindingObj.Spec.Replicas
-		conflictResolutionInBinding = bindingObj.Spec.ConflictResolution
-	}
-
-	targetClusters = mergeTargetClusters(targetClusters, requiredByBindingSnapshot)
+	bindingSpec := getBindingSpec(binding, scope)
+	targetClusters := mergeTargetClusters(bindingSpec.Clusters, bindingSpec.RequiredBy)
 
 	var jobCompletions []workv1alpha2.TargetCluster
 	var err error
@@ -72,6 +58,7 @@ func ensureWork(
 		}
 	}
 
+	var errs []error
 	for i := range targetClusters {
 		targetCluster := targetClusters[i]
 		clonedWorkload := workload.DeepCopy()
@@ -80,13 +67,14 @@ func ensureWork(
 
 		// If and only if the resource template has replicas, and the replica scheduling policy is divided,
 		// we need to revise replicas.
-		if needReviseReplicas(replicas, placement) {
+		if needReviseReplicas(bindingSpec.Replicas, bindingSpec.Placement) {
 			if resourceInterpreter.HookEnabled(clonedWorkload.GroupVersionKind(), configv1alpha1.InterpreterOperationReviseReplica) {
 				clonedWorkload, err = resourceInterpreter.ReviseReplica(clonedWorkload, int64(targetCluster.Replicas))
 				if err != nil {
 					klog.Errorf("Failed to revise replica for %s/%s/%s in cluster %s, err is: %v",
 						workload.GetKind(), workload.GetNamespace(), workload.GetName(), targetCluster.Name, err)
-					return err
+					errs = append(errs, err)
+					continue
 				}
 			}
 
@@ -98,7 +86,8 @@ func ensureWork(
 				if err = helper.ApplyReplica(clonedWorkload, int64(jobCompletions[i].Replicas), util.CompletionsField); err != nil {
 					klog.Errorf("Failed to apply Completions for %s/%s/%s in cluster %s, err is: %v",
 						clonedWorkload.GetKind(), clonedWorkload.GetNamespace(), clonedWorkload.GetName(), targetCluster.Name, err)
-					return err
+					errs = append(errs, err)
+					continue
 				}
 			}
 		}
@@ -106,17 +95,26 @@ func ensureWork(
 		// We should call ApplyOverridePolicies last, as override rules have the highest priority
 		cops, ops, err := overrideManager.ApplyOverridePolicies(clonedWorkload, targetCluster.Name)
 		if err != nil {
-			klog.Errorf("Failed to apply overrides for %s/%s/%s, err is: %v", clonedWorkload.GetKind(), clonedWorkload.GetNamespace(), clonedWorkload.GetName(), err)
-			return err
+			klog.Errorf("Failed to apply overrides for %s/%s/%s in cluster %s, err is: %v",
+				clonedWorkload.GetKind(), clonedWorkload.GetNamespace(), clonedWorkload.GetName(), targetCluster.Name, err)
+			errs = append(errs, err)
+			continue
 		}
-		workLabel := mergeLabel(clonedWorkload, workNamespace, binding, scope)
+		workLabel := mergeLabel(clonedWorkload, binding, scope)
 
-		annotations := mergeAnnotations(clonedWorkload, workNamespace, binding, scope)
-		annotations = mergeConflictResolution(clonedWorkload, conflictResolutionInBinding, annotations)
+		annotations := mergeAnnotations(clonedWorkload, binding, scope)
+		annotations = mergeConflictResolution(clonedWorkload, bindingSpec.ConflictResolution, annotations)
 		annotations, err = RecordAppliedOverrides(cops, ops, annotations)
 		if err != nil {
-			klog.Errorf("Failed to record appliedOverrides, Error: %v", err)
-			return err
+			klog.Errorf("Failed to record appliedOverrides in cluster %s, Error: %v", targetCluster.Name, err)
+			errs = append(errs, err)
+			continue
+		}
+
+		if features.FeatureGate.Enabled(features.StatefulFailoverInjection) {
+			// we need to figure out if the targetCluster is in the cluster we are going to migrate application to.
+			// If yes, we have to inject the preserved label state to the clonedWorkload.
+			clonedWorkload = injectReservedLabelState(bindingSpec, targetCluster, clonedWorkload, len(targetClusters))
 		}
 
 		workMeta := metav1.ObjectMeta{
@@ -127,11 +125,69 @@ func ensureWork(
 			Annotations: annotations,
 		}
 
-		if err = helper.CreateOrUpdateWork(c, workMeta, clonedWorkload); err != nil {
-			return err
+		if err = ctrlutil.CreateOrUpdateWork(
+			ctx,
+			c,
+			workMeta,
+			clonedWorkload,
+			ctrlutil.WithSuspendDispatching(shouldSuspendDispatching(bindingSpec.Suspension, targetCluster)),
+			ctrlutil.WithPreserveResourcesOnDeletion(ptr.Deref(bindingSpec.PreserveResourcesOnDeletion, false)),
+		); err != nil {
+			errs = append(errs, err)
+			continue
 		}
 	}
+	if len(errs) > 0 {
+		return errors.NewAggregate(errs)
+	}
 	return nil
+}
+
+func getBindingSpec(binding metav1.Object, scope apiextensionsv1.ResourceScope) workv1alpha2.ResourceBindingSpec {
+	var bindingSpec workv1alpha2.ResourceBindingSpec
+	switch scope {
+	case apiextensionsv1.NamespaceScoped:
+		bindingObj := binding.(*workv1alpha2.ResourceBinding)
+		bindingSpec = bindingObj.Spec
+	case apiextensionsv1.ClusterScoped:
+		bindingObj := binding.(*workv1alpha2.ClusterResourceBinding)
+		bindingSpec = bindingObj.Spec
+	}
+	return bindingSpec
+}
+
+// injectReservedLabelState injects the reservedLabelState in to the failover to cluster.
+// We have the following restrictions on whether to perform injection operations:
+//  1. Only the scenario where an application is deployed in one cluster and migrated to
+//     another cluster is considered.
+//  2. If consecutive failovers occur, for example, an application is migrated form clusterA
+//     to clusterB and then to clusterC, the PreservedLabelState before the last failover is
+//     used for injection. If the PreservedLabelState is empty, the injection is skipped.
+//  3. The injection operation is performed only when PurgeMode is set to Immediately.
+func injectReservedLabelState(bindingSpec workv1alpha2.ResourceBindingSpec, moveToCluster workv1alpha2.TargetCluster, workload *unstructured.Unstructured, clustersLen int) *unstructured.Unstructured {
+	if clustersLen > 1 {
+		return workload
+	}
+
+	if len(bindingSpec.GracefulEvictionTasks) == 0 {
+		return workload
+	}
+	targetEvictionTask := bindingSpec.GracefulEvictionTasks[len(bindingSpec.GracefulEvictionTasks)-1]
+
+	if targetEvictionTask.PurgeMode != policyv1alpha1.Immediately {
+		return workload
+	}
+
+	clustersBeforeFailover := sets.NewString(targetEvictionTask.ClustersBeforeFailover...)
+	if clustersBeforeFailover.Has(moveToCluster.Name) {
+		return workload
+	}
+
+	for key, value := range targetEvictionTask.PreservedLabelState {
+		util.MergeLabel(workload, key, value)
+	}
+
+	return workload
 }
 
 func mergeTargetClusters(targetClusters []workv1alpha2.TargetCluster, requiredByBindingSnapshot []workv1alpha2.BindingSnapshot) []workv1alpha2.TargetCluster {
@@ -153,37 +209,25 @@ func mergeTargetClusters(targetClusters []workv1alpha2.TargetCluster, requiredBy
 	return targetClusters
 }
 
-func mergeLabel(workload *unstructured.Unstructured, workNamespace string, binding metav1.Object, scope apiextensionsv1.ResourceScope) map[string]string {
+func mergeLabel(workload *unstructured.Unstructured, binding metav1.Object, scope apiextensionsv1.ResourceScope) map[string]string {
 	var workLabel = make(map[string]string)
-	util.MergeLabel(workload, workv1alpha1.WorkNamespaceLabel, workNamespace)
-	util.MergeLabel(workload, workv1alpha1.WorkNameLabel, names.GenerateWorkName(workload.GetKind(), workload.GetName(), workload.GetNamespace()))
-	util.MergeLabel(workload, util.ManagedByKarmadaLabel, util.ManagedByKarmadaLabelValue)
 	if scope == apiextensionsv1.NamespaceScoped {
-		util.RemoveLabels(workload, workv1alpha2.ResourceBindingUIDLabel)
-
 		bindingID := util.GetLabelValue(binding.GetLabels(), workv1alpha2.ResourceBindingPermanentIDLabel)
-		util.MergeLabel(workload, workv1alpha2.ResourceBindingReferenceKey, names.GenerateBindingReferenceKey(binding.GetNamespace(), binding.GetName()))
 		util.MergeLabel(workload, workv1alpha2.ResourceBindingPermanentIDLabel, bindingID)
-
-		workLabel[workv1alpha2.ResourceBindingReferenceKey] = names.GenerateBindingReferenceKey(binding.GetNamespace(), binding.GetName())
 		workLabel[workv1alpha2.ResourceBindingPermanentIDLabel] = bindingID
 	} else {
-		util.RemoveLabels(workload, workv1alpha2.ClusterResourceBindingUIDLabel)
-
 		bindingID := util.GetLabelValue(binding.GetLabels(), workv1alpha2.ClusterResourceBindingPermanentIDLabel)
-		util.MergeLabel(workload, workv1alpha2.ClusterResourceBindingReferenceKey, names.GenerateBindingReferenceKey("", binding.GetName()))
 		util.MergeLabel(workload, workv1alpha2.ClusterResourceBindingPermanentIDLabel, bindingID)
-
-		workLabel[workv1alpha2.ClusterResourceBindingReferenceKey] = names.GenerateBindingReferenceKey("", binding.GetName())
 		workLabel[workv1alpha2.ClusterResourceBindingPermanentIDLabel] = bindingID
 	}
 	return workLabel
 }
 
-func mergeAnnotations(workload *unstructured.Unstructured, workNamespace string, binding metav1.Object, scope apiextensionsv1.ResourceScope) map[string]string {
+func mergeAnnotations(workload *unstructured.Unstructured, binding metav1.Object, scope apiextensionsv1.ResourceScope) map[string]string {
 	annotations := make(map[string]string)
-	util.MergeAnnotation(workload, workv1alpha2.WorkNameAnnotation, names.GenerateWorkName(workload.GetKind(), workload.GetName(), workload.GetNamespace()))
-	util.MergeAnnotation(workload, workv1alpha2.WorkNamespaceAnnotation, workNamespace)
+	if workload.GetGeneration() > 0 {
+		util.MergeAnnotation(workload, workv1alpha2.ResourceTemplateGenerationAnnotationKey, strconv.FormatInt(workload.GetGeneration(), 10))
+	}
 
 	if scope == apiextensionsv1.NamespaceScoped {
 		util.MergeAnnotation(workload, workv1alpha2.ResourceBindingNamespaceAnnotationKey, binding.GetNamespace())
@@ -241,7 +285,7 @@ func mergeConflictResolution(workload *unstructured.Unstructured, conflictResolu
 		return annotations
 	} else if conflictResolutionInRT != "" {
 		// ignore its value and add logs if conflictResolutionInRT is neither abort nor overwrite.
-		klog.Warningf("ignore the invalid conflict-resolution annotation in ResourceTemplate %s/%s/%s: %s",
+		klog.Warningf("Ignore the invalid conflict-resolution annotation in ResourceTemplate %s/%s/%s: %s",
 			workload.GetKind(), workload.GetNamespace(), workload.GetName(), conflictResolutionInRT)
 	}
 
@@ -270,4 +314,22 @@ func divideReplicasByJobCompletions(workload *unstructured.Unstructured, cluster
 
 func needReviseReplicas(replicas int32, placement *policyv1alpha1.Placement) bool {
 	return replicas > 0 && placement != nil && placement.ReplicaSchedulingType() == policyv1alpha1.ReplicaSchedulingTypeDivided
+}
+
+func shouldSuspendDispatching(suspension *workv1alpha2.Suspension, targetCluster workv1alpha2.TargetCluster) bool {
+	if suspension == nil {
+		return false
+	}
+
+	suspendDispatching := ptr.Deref(suspension.Dispatching, false)
+
+	if !suspendDispatching && suspension.DispatchingOnClusters != nil {
+		for _, cluster := range suspension.DispatchingOnClusters.ClusterNames {
+			if cluster == targetCluster.Name {
+				suspendDispatching = true
+				break
+			}
+		}
+	}
+	return suspendDispatching
 }

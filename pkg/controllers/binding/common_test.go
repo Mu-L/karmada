@@ -18,15 +18,16 @@ package binding
 
 import (
 	"reflect"
+	"sort"
 	"testing"
 
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/utils/ptr"
 
 	policyv1alpha1 "github.com/karmada-io/karmada/pkg/apis/policy/v1alpha1"
 	workv1alpha2 "github.com/karmada-io/karmada/pkg/apis/work/v1alpha2"
-	"github.com/karmada-io/karmada/pkg/util/names"
 )
 
 func Test_mergeTargetClusters(t *testing.T) {
@@ -106,12 +107,11 @@ func Test_mergeLabel(t *testing.T) {
 	rbID := "93162d3c-ee8e-4995-9034-05f4d5d2c2b9"
 
 	tests := []struct {
-		name          string
-		workload      *unstructured.Unstructured
-		workNamespace string
-		binding       metav1.Object
-		scope         v1.ResourceScope
-		want          map[string]string
+		name     string
+		workload *unstructured.Unstructured
+		binding  metav1.Object
+		scope    v1.ResourceScope
+		want     map[string]string
 	}{
 		{
 			name: "NamespaceScoped",
@@ -125,7 +125,6 @@ func Test_mergeLabel(t *testing.T) {
 					},
 				},
 			},
-			workNamespace: namespace,
 			binding: &workv1alpha2.ClusterResourceBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      bindingName,
@@ -138,7 +137,6 @@ func Test_mergeLabel(t *testing.T) {
 			scope: v1.NamespaceScoped,
 			want: map[string]string{
 				workv1alpha2.ResourceBindingPermanentIDLabel: rbID,
-				workv1alpha2.ResourceBindingReferenceKey:     names.GenerateBindingReferenceKey(namespace, bindingName),
 			},
 		},
 		{
@@ -163,13 +161,21 @@ func Test_mergeLabel(t *testing.T) {
 			scope: v1.ClusterScoped,
 			want: map[string]string{
 				workv1alpha2.ClusterResourceBindingPermanentIDLabel: rbID,
-				workv1alpha2.ClusterResourceBindingReferenceKey:     names.GenerateBindingReferenceKey("", bindingName),
 			},
 		},
 	}
+
+	checker := func(got, want map[string]string) bool {
+		for key, val := range want {
+			if got[key] != val {
+				return false
+			}
+		}
+		return true
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := mergeLabel(tt.workload, tt.workNamespace, tt.binding, tt.scope); !reflect.DeepEqual(got, tt.want) {
+			if got := mergeLabel(tt.workload, tt.binding, tt.scope); !checker(got, tt.want) {
 				t.Errorf("mergeLabel() = %v, want %v", got, tt.want)
 			}
 		})
@@ -181,16 +187,14 @@ func Test_mergeAnnotations(t *testing.T) {
 	bindingName := "fake-bindingName"
 
 	tests := []struct {
-		name      string
-		namespace string
-		workload  *unstructured.Unstructured
-		binding   metav1.Object
-		scope     v1.ResourceScope
-		want      map[string]string
+		name     string
+		workload *unstructured.Unstructured
+		binding  metav1.Object
+		scope    v1.ResourceScope
+		want     map[string]string
 	}{
 		{
-			name:      "NamespaceScoped",
-			namespace: "test",
+			name: "NamespaceScoped",
 			workload: &unstructured.Unstructured{
 				Object: map[string]interface{}{
 					"apiVersion": "apps/v1",
@@ -214,8 +218,7 @@ func Test_mergeAnnotations(t *testing.T) {
 			},
 		},
 		{
-			name:      "ClusterScoped",
-			namespace: "",
+			name: "ClusterScoped",
 			workload: &unstructured.Unstructured{
 				Object: map[string]interface{}{
 					"apiVersion": "v1",
@@ -238,7 +241,7 @@ func Test_mergeAnnotations(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := mergeAnnotations(tt.workload, tt.namespace, tt.binding, tt.scope); !reflect.DeepEqual(got, tt.want) {
+			if got := mergeAnnotations(tt.workload, tt.binding, tt.scope); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("mergeAnnotations() = %v, want %v", got, tt.want)
 			}
 		})
@@ -311,6 +314,187 @@ func Test_mergeConflictResolution(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := mergeConflictResolution(tt.workload, tt.conflictResolutionInBinding, tt.annotations); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("mergeConflictResolution() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_shouldSuspendDispatching(t *testing.T) {
+	type args struct {
+		suspension    *workv1alpha2.Suspension
+		targetCluster workv1alpha2.TargetCluster
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "false for nil suspension",
+			args: args{},
+			want: false,
+		},
+		{
+			name: "false for nil dispatching",
+			args: args{
+				suspension: &workv1alpha2.Suspension{Suspension: policyv1alpha1.Suspension{Dispatching: nil}},
+			},
+			want: false,
+		},
+		{
+			name: "false for not suspension",
+			args: args{
+				suspension: &workv1alpha2.Suspension{Suspension: policyv1alpha1.Suspension{Dispatching: ptr.To(false)}},
+			},
+			want: false,
+		},
+		{
+			name: "true for suspension",
+			args: args{
+				suspension: &workv1alpha2.Suspension{Suspension: policyv1alpha1.Suspension{Dispatching: ptr.To(true)}},
+			},
+			want: true,
+		},
+		{
+			name: "true for matching cluster",
+			args: args{
+				suspension:    &workv1alpha2.Suspension{Suspension: policyv1alpha1.Suspension{DispatchingOnClusters: &policyv1alpha1.SuspendClusters{ClusterNames: []string{"clusterA"}}}},
+				targetCluster: workv1alpha2.TargetCluster{Name: "clusterA"},
+			},
+			want: true,
+		},
+		{
+			name: "false for mismatched cluster",
+			args: args{
+				suspension:    &workv1alpha2.Suspension{Suspension: policyv1alpha1.Suspension{DispatchingOnClusters: &policyv1alpha1.SuspendClusters{ClusterNames: []string{"clusterB"}}}},
+				targetCluster: workv1alpha2.TargetCluster{Name: "clusterA"},
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := shouldSuspendDispatching(tt.args.suspension, tt.args.targetCluster); got != tt.want {
+				t.Errorf("shouldSuspendDispatching() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_needReviseReplicas(t *testing.T) {
+	tests := []struct {
+		name      string
+		replicas  int32
+		placement *policyv1alpha1.Placement
+		want      bool
+	}{
+		{
+			name:     "replicas is zero",
+			replicas: 0,
+			placement: &policyv1alpha1.Placement{
+				ReplicaScheduling: &policyv1alpha1.ReplicaSchedulingStrategy{
+					ReplicaSchedulingType: policyv1alpha1.ReplicaSchedulingTypeDivided,
+				},
+			},
+			want: false,
+		},
+		{
+			name:      "placement is nil",
+			replicas:  1,
+			placement: nil,
+			want:      false,
+		},
+		{
+			name:     "replica scheduling type is not divided",
+			replicas: 1,
+			placement: &policyv1alpha1.Placement{
+				ReplicaScheduling: &policyv1alpha1.ReplicaSchedulingStrategy{
+					ReplicaSchedulingType: policyv1alpha1.ReplicaSchedulingTypeDuplicated,
+				},
+			},
+			want: false,
+		},
+		{
+			name:     "replica scheduling type is divided",
+			replicas: 1,
+			placement: &policyv1alpha1.Placement{
+				ReplicaScheduling: &policyv1alpha1.ReplicaSchedulingStrategy{
+					ReplicaSchedulingType: policyv1alpha1.ReplicaSchedulingTypeDivided,
+				},
+			},
+			want: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := needReviseReplicas(tt.replicas, tt.placement); got != tt.want {
+				t.Errorf("needReviseReplicas() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_divideReplicasByJobCompletions(t *testing.T) {
+	tests := []struct {
+		name     string
+		workload *unstructured.Unstructured
+		clusters []workv1alpha2.TargetCluster
+		want     []workv1alpha2.TargetCluster
+		wantErr  bool
+	}{
+		{
+			name: "completions found",
+			workload: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"spec": map[string]interface{}{
+						"completions": int64(10),
+					},
+				},
+			},
+			clusters: []workv1alpha2.TargetCluster{
+				{Name: "cluster1", Replicas: 5},
+				{Name: "cluster2", Replicas: 5},
+			},
+			want: []workv1alpha2.TargetCluster{
+				{Name: "cluster1", Replicas: 5},
+				{Name: "cluster2", Replicas: 5},
+			},
+			wantErr: false,
+		},
+		{
+			name: "error in NestedInt64",
+			workload: &unstructured.Unstructured{
+				Object: map[string]interface{}{
+					"spec": "invalid",
+				},
+			},
+			clusters: []workv1alpha2.TargetCluster{
+				{Name: "cluster1", Replicas: 5},
+				{Name: "cluster2", Replicas: 5},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := divideReplicasByJobCompletions(tt.workload, tt.clusters)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("divideReplicasByJobCompletions() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			sort.Slice(got, func(i, j int) bool {
+				return got[i].Name < got[j].Name
+			})
+			sort.Slice(tt.want, func(i, j int) bool {
+				return tt.want[i].Name < tt.want[j].Name
+			})
+
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("divideReplicasByJobCompletions() = %v, want %v", got, tt.want)
 			}
 		})
 	}

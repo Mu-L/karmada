@@ -26,6 +26,8 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/karmada-io/karmada/pkg/util"
 )
 
 // Downloader Download progress
@@ -66,7 +68,7 @@ func DownloadFile(url, filePath string) error {
 		return fmt.Errorf("failed download file. url: %s code: %v", url, resp.StatusCode)
 	}
 
-	file, err := os.Create(filePath)
+	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_RDWR, util.DefaultFilePerm)
 	if err != nil {
 		return err
 	}
@@ -114,7 +116,7 @@ func DeCompress(file, targetPath string) error {
 				return err
 			}
 		case tar.TypeReg:
-			outFile, err := os.Create(targetPath + "/" + header.Name)
+			outFile, err := os.OpenFile(targetPath+"/"+header.Name, os.O_CREATE|os.O_RDWR, util.DefaultFilePerm)
 			if err != nil {
 				return err
 			}
@@ -145,7 +147,7 @@ func ioCopyN(outFile *os.File, tr *tar.Reader) error {
 // ListFiles traverse directory files
 func ListFiles(path string) []string {
 	var files []string
-	if err := filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+	if err := filepath.Walk(path, func(path string, info os.FileInfo, _ error) error {
 		if !info.IsDir() {
 			files = append(files, path)
 		}
@@ -154,4 +156,18 @@ func ListFiles(path string) []string {
 		fmt.Println(err)
 	}
 	return files
+}
+
+// PathExists check whether the path is exist
+func PathExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if err == nil {
+		return true, nil
+	}
+
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+
+	return false, err
 }

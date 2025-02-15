@@ -23,9 +23,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2"
-	"k8s.io/utils/pointer"
+	"k8s.io/utils/ptr"
 
 	workloadv1alpha1 "github.com/karmada-io/karmada/examples/customresourceinterpreter/apis/workload/v1alpha1"
+	policyv1alpha1 "github.com/karmada-io/karmada/pkg/apis/policy/v1alpha1"
 	"github.com/karmada-io/karmada/pkg/util/helper"
 )
 
@@ -120,7 +121,7 @@ func TestSpecificationChanged(t *testing.T) {
 					ManagedFields:   []metav1.ManagedFieldsEntry{{}},
 				},
 				Spec: workloadv1alpha1.WorkloadSpec{
-					Replicas: pointer.Int32(3),
+					Replicas: ptr.To[int32](3),
 					Template: corev1.PodTemplateSpec{},
 					Paused:   false,
 				},
@@ -132,7 +133,7 @@ func TestSpecificationChanged(t *testing.T) {
 					ManagedFields:   []metav1.ManagedFieldsEntry{{}},
 				},
 				Spec: workloadv1alpha1.WorkloadSpec{
-					Replicas: pointer.Int32(5),
+					Replicas: ptr.To[int32](5),
 					Template: corev1.PodTemplateSpec{},
 					Paused:   false,
 				},
@@ -148,7 +149,7 @@ func TestSpecificationChanged(t *testing.T) {
 					ManagedFields:   []metav1.ManagedFieldsEntry{{}},
 				},
 				Spec: workloadv1alpha1.WorkloadSpec{
-					Replicas: pointer.Int32(3),
+					Replicas: ptr.To[int32](3),
 					Template: corev1.PodTemplateSpec{},
 					Paused:   false,
 				},
@@ -160,7 +161,7 @@ func TestSpecificationChanged(t *testing.T) {
 					ManagedFields:   []metav1.ManagedFieldsEntry{{}, {}},
 				},
 				Spec: workloadv1alpha1.WorkloadSpec{
-					Replicas: pointer.Int32(3),
+					Replicas: ptr.To[int32](3),
 					Template: corev1.PodTemplateSpec{},
 					Paused:   false,
 				},
@@ -176,7 +177,7 @@ func TestSpecificationChanged(t *testing.T) {
 					ManagedFields:   []metav1.ManagedFieldsEntry{{}},
 				},
 				Spec: workloadv1alpha1.WorkloadSpec{
-					Replicas: pointer.Int32(3),
+					Replicas: ptr.To[int32](3),
 					Template: corev1.PodTemplateSpec{},
 					Paused:   false,
 				},
@@ -188,11 +189,109 @@ func TestSpecificationChanged(t *testing.T) {
 					ManagedFields:   []metav1.ManagedFieldsEntry{{}, {}},
 				},
 				Spec: workloadv1alpha1.WorkloadSpec{
-					Replicas: pointer.Int32(5),
+					Replicas: ptr.To[int32](5),
 					Template: corev1.PodTemplateSpec{},
 					Paused:   false,
 				},
 				Status: workloadv1alpha1.WorkloadStatus{ReadyReplicas: 3},
+			},
+			wantChange: true,
+		},
+		{
+			name: "No change in Service",
+			oldObj: &corev1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					ResourceVersion: "123456",
+					ManagedFields:   []metav1.ManagedFieldsEntry{{}},
+				},
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{{Port: 80}},
+				},
+			},
+			newObj: &corev1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					ResourceVersion: "123457",
+					ManagedFields:   []metav1.ManagedFieldsEntry{{}, {}},
+				},
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{{Port: 80}},
+				},
+			},
+			wantChange: false,
+		},
+		{
+			name: "Change in Service ports",
+			oldObj: &corev1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					ResourceVersion: "123456",
+					ManagedFields:   []metav1.ManagedFieldsEntry{{}},
+				},
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{{Port: 80}},
+				},
+			},
+			newObj: &corev1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					ResourceVersion: "123457",
+					ManagedFields:   []metav1.ManagedFieldsEntry{{}, {}},
+				},
+				Spec: corev1.ServiceSpec{
+					Ports: []corev1.ServicePort{{Port: 8080}},
+				},
+			},
+			wantChange: true,
+		},
+		{
+			name: "Change in labels",
+			oldObj: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					ResourceVersion: "123456",
+					Labels:          map[string]string{"app": "v1"},
+				},
+				Data: map[string]string{"key": "value"},
+			},
+			newObj: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					ResourceVersion: "123457",
+					Labels:          map[string]string{"app": "v2"},
+				},
+				Data: map[string]string{"key": "value"},
+			},
+			wantChange: true,
+		},
+		{
+			name: "Change in annotations",
+			oldObj: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					ResourceVersion: "123456",
+					Annotations:     map[string]string{"note": "v1"},
+				},
+				Data: map[string]string{"key": "value"},
+			},
+			newObj: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					ResourceVersion: "123457",
+					Annotations:     map[string]string{"note": "v2"},
+				},
+				Data: map[string]string{"key": "value"},
+			},
+			wantChange: true,
+		},
+		{
+			name: "Change with user Karmada labels",
+			oldObj: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					ResourceVersion: "123456",
+					Labels:          map[string]string{policyv1alpha1.NamespaceSkipAutoPropagationLabel: "true"},
+				},
+				Data: map[string]string{"key": "value"},
+			},
+			newObj: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					ResourceVersion: "123457",
+					Labels:          map[string]string{policyv1alpha1.NamespaceSkipAutoPropagationLabel: "false"},
+				},
+				Data: map[string]string{"key": "value"},
 			},
 			wantChange: true,
 		},
@@ -215,6 +314,88 @@ func TestSpecificationChanged(t *testing.T) {
 			got := SpecificationChanged(unstructuredOldObj, unstructuredNewObj)
 			if tt.wantChange != got {
 				t.Fatalf("SpecificationChanged() got %v, want %v", got, tt.wantChange)
+			}
+		})
+	}
+}
+
+func TestResourceChangeByKarmada(t *testing.T) {
+	tests := []struct {
+		name                string
+		oldObj              interface{}
+		newObj              interface{}
+		wantChangeByKarmada bool
+	}{
+		{
+			name: "Change by Karmada",
+			oldObj: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					ResourceVersion: "123456",
+					Labels:          map[string]string{"app.karmada.io/managed": "true"},
+				},
+				Data: map[string]string{"key": "value"},
+			},
+			newObj: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					ResourceVersion: "123457",
+					Labels:          map[string]string{"app.karmada.io/managed": "false"},
+				},
+				Data: map[string]string{"key": "value"},
+			},
+			wantChangeByKarmada: true,
+		},
+		{
+			name: "Change not by Karmada",
+			oldObj: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					ResourceVersion: "123456",
+					Labels:          map[string]string{"app": "v1"},
+				},
+				Data: map[string]string{"key": "value"},
+			},
+			newObj: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					ResourceVersion: "123457",
+					Labels:          map[string]string{"app": "v2"},
+				},
+				Data: map[string]string{"key": "value"},
+			},
+			wantChangeByKarmada: false,
+		},
+		{
+			name: "Change in Karmada annotations",
+			oldObj: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					ResourceVersion: "123456",
+					Annotations:     map[string]string{"note.karmada.io/managed": "true"},
+				},
+				Data: map[string]string{"key": "value"},
+			},
+			newObj: &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					ResourceVersion: "123457",
+					Annotations:     map[string]string{"note.karmada.io/managed": "false"},
+				},
+				Data: map[string]string{"key": "value"},
+			},
+			wantChangeByKarmada: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			oldUnstructured, err := helper.ToUnstructured(tt.oldObj)
+			if err != nil {
+				t.Fatalf("Failed to convert oldObj to unstructured: %v", err)
+			}
+			newUnstructured, err := helper.ToUnstructured(tt.newObj)
+			if err != nil {
+				t.Fatalf("Failed to convert newObj to unstructured: %v", err)
+			}
+
+			got := ResourceChangeByKarmada(oldUnstructured, newUnstructured)
+			if got != tt.wantChangeByKarmada {
+				t.Errorf("ResourceChangeByKarmada() = %v, want %v", got, tt.wantChangeByKarmada)
 			}
 		})
 	}

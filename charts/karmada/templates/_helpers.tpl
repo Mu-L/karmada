@@ -306,6 +306,10 @@ app: {{- include "karmada.name" .}}-search
 {{- include "karmada.commonLabels" . -}}
 {{- end -}}
 
+{{- define "karmada.staticResourceJob.labels" -}}
+{{- include "karmada.commonLabels" . -}}
+{{- end -}}
+
 {{- define "karmada.postInstallJob.labels" -}}
 {{- include "karmada.commonLabels" . -}}
 {{- end -}}
@@ -343,6 +347,13 @@ app: {{- include "karmada.name" .}}-search
   {{- if eq .Values.etcd.mode "external" }}
     secretName: {{ $name }}-external-etcd-cert
   {{- end }}
+{{- end -}}
+
+{{- define "karmada.scheduler.cert.volume" -}}
+{{ $name :=  include "karmada.name" . }}
+- name: karmada-certs
+  secret:
+    secretName: {{ $name }}-cert
 {{- end -}}
 
 {{/*
@@ -527,10 +538,34 @@ Return the proper karmada kubectl image name
 {{ include "common.images.image" (dict "imageRoot" .Values.kubectl.image "global" .Values.global) }}
 {{- end -}}
 
+{{/*
+Return the proper Docker Image Registry Secret Names
+*/}}
+{{- define "karmada.imagePullSecrets" -}}
+{{ include "common.images.pullSecrets" (dict "images" (list .Values.cfssl.image .Values.kubectl.image .Values.etcd.internal.image .Values.agent.image .Values.apiServer.image .Values.controllerManager.image .Values.descheduler.image .Values.schedulerEstimator.image .Values.scheduler.image .Values.webhook.image .Values.aggregatedApiServer.image .Values.metricsAdapter.image .Values.search.image .Values.kubeControllerManager.image) "global" .Values.global) }}
+{{- end -}}
+
 {{- define "karmada.controllerManager.featureGates" -}}
      {{- if (not (empty .Values.controllerManager.featureGates)) }}
           {{- $featureGatesFlag := "" -}}
           {{- range $key, $value := .Values.controllerManager.featureGates -}}
+               {{- if not (empty (toString $value)) }}
+                    {{- $featureGatesFlag = cat $featureGatesFlag $key "=" $value ","  -}}
+               {{- end -}}
+          {{- end -}}
+
+          {{- if gt (len $featureGatesFlag) 0 }}
+               {{- $featureGatesFlag := trimSuffix "," $featureGatesFlag  | nospace -}}
+               {{- printf "%s=%s" "--feature-gates" $featureGatesFlag -}}
+          {{- end -}}
+     {{- end -}}
+{{- end -}}
+
+{{- define "karmada.schedulerEstimator.featureGates" -}}
+     {{- $featureGatesArg := index . "featureGatesArg" -}}
+     {{- if (not (empty $featureGatesArg)) }}
+          {{- $featureGatesFlag := "" -}}
+          {{- range $key, $value := $featureGatesArg -}}
                {{- if not (empty (toString $value)) }}
                     {{- $featureGatesFlag = cat $featureGatesFlag $key "=" $value ","  -}}
                {{- end -}}
@@ -549,4 +584,56 @@ Return the proper karmada kubectl image name
 - --{{ $key }}={{ $value }}
 {{- end }}
 {{- end }}
+{{- end -}}
+
+{{- define "karmada.initContainer.waitEtcd" -}}
+- name: wait
+  image: {{ include "karmada.cfssl.image" . }}
+  imagePullPolicy: {{ .Values.kubectl.image.pullPolicy }}
+  command:
+    - /bin/sh
+    - -c
+    - |
+      bash <<'EOF'
+      set -ex
+      while true; do
+        ETCD_ENDPOINT=${ETCD_CLIENT_SERVICE_HOST}":"${ETCD_CLIENT_SERVICE_PORT}
+
+        # check etcd connectivity by executing curl.
+        # if etcd is ready, the response of curl would be `curl: (52) Empty reply from server`, with return code 52.
+        # if not, the response of curl would be like `curl: (7) Failed to connect to .....`, with other return code.
+        if curl --connect-timeout 2 ${ETCD_ENDPOINT} || [ $? -eq 52 ]; then
+          break
+        fi
+
+        echo "failed to connect to "${ETCD_ENDPOINT}
+        sleep 2
+      done
+      echo "successfully connect to "${ETCD_ENDPOINT}
+      EOF
+{{- end -}}
+
+{{- define "karmada.initContainer.waitStaticResource" -}}
+- name: wait
+  image: {{ include "karmada.kubectl.image" . }}
+  imagePullPolicy: {{ .Values.kubectl.image.pullPolicy }}
+  command:
+    - /bin/sh
+    - -c
+    - |
+      bash <<'EOF'
+      set -ex
+
+      # here are three cases:
+      # case first installation: no `cm/karmada-version` at first, so when you get it, it means `karmada-static-resource-job` finished.
+      # case restart: already has `cm/karmada-version`, which means `karmada-static-resource-job` already finished.
+      # case upgrading: already has `cm/karmada-version`, but it may be old version, we should wait until `.data.karmadaVersion` equal to current `.Values.karmadaImageVersion`.
+      while [[ $(kubectl --kubeconfig /etc/kubeconfig get configmap karmada-version -n {{ .Values.systemNamespace }} -o jsonpath='{.data.karmadaVersion}') != {{ .Values.karmadaImageVersion }} ]]; do
+        echo "wait for karmada-static-resource-job finished"; sleep 2
+      done
+
+      echo "karmada-static-resource-job successfully completed since expected configmap value was found"
+      EOF
+  volumeMounts:
+    {{- include "karmada.kubeconfig.volumeMount" .| nindent 4 }}
 {{- end -}}
